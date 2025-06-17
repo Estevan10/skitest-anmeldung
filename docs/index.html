@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -6,10 +5,36 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Skitest Anmeldung</title>
   <style>
-    body { font-family: sans-serif; margin: 20px; background: #f0f0f0; }
-    .form-container { background: white; padding: 20px; border-radius: 10px; max-width: 600px; margin: auto; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-    label { display: block; margin-top: 15px; }
-    input, select { width: 100%; padding: 8px; border-radius: 5px; border: 1px solid #ccc; }
+    body {
+      font-family: sans-serif;
+      margin: 0;
+      padding: 0;
+      background-image: url('Bild5.png');
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+    }
+    .form-container {
+      background: rgba(255, 255, 255, 0.95);
+      padding: 20px;
+      border-radius: 10px;
+      max-width: 600px;
+      margin: 50px auto;
+      box-shadow: 0 0 15px rgba(0,0,0,0.2);
+    }
+    h2 {
+      text-align: center;
+    }
+    label {
+      display: block;
+      margin-top: 15px;
+    }
+    input, select {
+      width: 100%;
+      padding: 8px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
     .checkbox-box {
       background-color: #f9f9f9;
       border: 1px solid #ddd;
@@ -148,7 +173,6 @@
       localStorage.setItem("skitestEintraege", JSON.stringify(gespeicherteEintraege));
 
       alert("Anmeldung gespeichert. Vielen Dank!");
-      document.querySelector("form")?.reset();
       window.location.reload();
     }
   </script>
