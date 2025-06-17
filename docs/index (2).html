@@ -1,13 +1,118 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Skitest Anmeldung</title>
-  <!-- Styles und Inhalte wie im Textdoc -->
+  <style>
+    body { font-family: sans-serif; margin: 20px; background: #f0f0f0; }
+    .form-container { background: white; padding: 20px; border-radius: 10px; max-width: 500px; margin: auto; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+    label { display: block; margin-top: 15px; }
+    input, select { width: 100%; padding: 8px; border-radius: 5px; border: 1px solid #ccc; }
+
+    .checkbox-box, .disclaimer-box {
+      background-color: #f9f9f9;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 15px;
+      margin-top: 20px;
+    }
+    .checkbox-row {
+      display: flex;
+      align-items: center;
+    }
+    .checkbox-row input[type="checkbox"] {
+      margin-right: 10px;
+      transform: scale(1.2);
+    }
+    .checkbox-row label {
+      font-size: 14px;
+    }
+
+    .disclaimer-box {
+      font-size: 12px;
+      color: #555;
+      line-height: 1.5;
+    }
+
+    button {
+      margin-top: 25px;
+      padding: 12px;
+      width: 100%;
+      background-color: #28a745;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+    }
+  </style>
 </head>
 <body>
-  <!-- Hier kommt der vollständige HTML-Inhalt aus dem Canvas -->
-  <h1>Diese Version ist als Fallback sichtbar, falls etwas fehlt.</h1>
+  <div class="form-container">
+    <h2>Skitest Anmeldung</h2>
+
+    <label for="name">Vorname / Name</label>
+    <input type="text" id="name" name="name" required />
+
+    <label for="plz_ort">PLZ / Ort</label>
+    <input type="text" id="plz_ort" name="plz_ort" required />
+
+    <label for="email">E-Mail</label>
+    <input type="email" id="email" name="email" required />
+
+    <label for="telefon">Telefon</label>
+    <input type="text" id="telefon" name="telefon" required />
+
+    <label for="datum">Datum</label>
+    <input type="date" id="datum" name="datum" required />
+
+    <label for="ort_test">Skitest-Ort</label>
+    <select id="ort_test" required>
+      <option value="Arosa">Arosa</option>
+      <option value="Lenzerheide">Lenzerheide</option>
+      <option value="Madrisa">Madrisa</option>
+      <option value="Eigergletscher">Eigergletscher</option>
+    </select>
+
+    <label for="modell">Skimodell inkl. Länge</label>
+    <select id="modell" required>
+      <option value="ARX 150">ARX 150</option>
+      <option value="ARX 156">ARX 156</option>
+      <option value="ARX 164">ARX 164</option>
+      <option value="ARX 172">ARX 172</option>
+      <option value="ARX 150 PRO">ARX 150 PRO</option>
+      <option value="ARX 156 PRO">ARX 156 PRO</option>
+      <option value="ARX 164 PRO">ARX 164 PRO</option>
+      <option value="ARX 172 PRO">ARX 172 PRO</option>
+      <option value="ASR 132">ASR 132</option>
+      <option value="ASR 144">ASR 144</option>
+      <option value="ASR 156">ASR 156</option>
+      <option value="ASR 165">ASR 165</option>
+      <option value="ADP 155/160">ADP 155/160</option>
+      <option value="ADP 163/168">ADP 163/168</option>
+      <option value="AFR 167">AFR 167</option>
+      <option value="AFR 176">AFR 176</option>
+    </select>
+
+    <label for="ski_nr">Ski-Nr.</label>
+    <input type="text" id="ski_nr" name="ski_nr" required />
+
+    <!-- Einwilligung -->
+    <div class="checkbox-box">
+      <div class="checkbox-row">
+        <input type="checkbox" id="einverstaendnis" required />
+        <label for="einverstaendnis">Ich akzeptiere die Bedingungen und nehme zur Kenntnis</label>
+      </div>
+    </div>
+
+    <!-- Rechtlicher Hinweis -->
+    <div class="disclaimer-box">
+      Der Kunde / Die Kundin trägt vollumfänglich das Risiko für sich und sein Handeln auch gegenüber Dritten.
+      Anavon Ski AG lehnt sämtliche Ansprüche gegenüber dem Kunden / der Kundin, den Geschädigten oder Dritten ab.
+      Für Schäden durch fehlerhafte Einstellung ist der Kunde / die Kundin selbst verantwortlich.
+    </div>
+
+    <button onclick="alert('Daten wurden gespeichert. Vielen Dank!')">Abschicken</button>
+  </div>
 </body>
 </html>
