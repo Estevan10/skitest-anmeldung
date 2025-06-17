@@ -1,7 +1,271 @@
 <!DOCTYPE html>
 <html lang="de">
-<head><meta charset="UTF-8"><title>Skitest Tool</title></head>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Skitest Anmeldung</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 20px;
+      background-color: #f0f0f0;
+    }
+    .form-container {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      max-width: 600px;
+      margin: auto;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    label {
+      display: block;
+      margin: 15px 0 5px;
+    }
+    input, select {
+      width: 100%;
+      padding: 8px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+    .status {
+      margin-top: 15px;
+      padding: 10px;
+      border-radius: 5px;
+      text-align: center;
+      font-weight: bold;
+    }
+    .available { background-color: #d4edda; color: #155724; }
+    .unavailable { background-color: #f8d7da; color: #721c24; }
+    button {
+      margin-top: 20px;
+      padding: 10px;
+      width: 100%;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    .übersicht {
+      margin: 40px auto;
+      max-width: 1000px;
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: left;
+    }
+    th {
+      background-color: #eee;
+    }
+    tr:hover {
+      background-color: #f1f1f1;
+      cursor: pointer;
+    }
+    .small-button {
+      padding: 5px 10px;
+      background-color: #28a745;
+      color: white;
+      border: none;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+    .small-button[disabled] {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
 <body>
-  <h1>Skitest-Anmeldung erfolgreich veröffentlicht ✅</h1>
+  <div class="form-container">
+    <h2>Skitest Anmeldung</h2>
+    <label for="name">Name</label>
+    <input type="text" id="name" name="name">
+
+    <label for="address">Adresse</label>
+    <input type="text" id="address" name="address">
+
+    <label for="plz">PLZ</label>
+    <input type="text" id="plz" name="plz">
+
+    <label for="ort">Ort</label>
+    <input type="text" id="ort" name="ort">
+
+    <label for="datum">Datum</label>
+    <input type="date" id="datum" name="datum">
+
+    <label for="ort_test">Skitest-Ort</label>
+    <select id="ort_test">
+      <option value="Arosa">Arosa</option>
+      <option value="Lenzerheide">Lenzerheide</option>
+      <option value="Madrisa">Madrisa</option>
+      <option value="Eigergletscher">Eigergletscher</option>
+    </select>
+
+    <label for="modell">Skimodell inkl. Länge</label>
+    <select id="modell">
+      <option value="ARX 150">ARX 150</option>
+      <option value="ARX 156">ARX 156</option>
+      <option value="ARX 164">ARX 164</option>
+      <option value="ARX 172">ARX 172</option>
+      <option value="ARX 150 PRO">ARX 150 PRO</option>
+      <option value="ARX 156 PRO">ARX 156 PRO</option>
+      <option value="ARX 164 PRO">ARX 164 PRO</option>
+      <option value="ARX 172 PRO">ARX 172 PRO</option>
+      <option value="ASR 132">ASR 132</option>
+      <option value="ASR 144">ASR 144</option>
+      <option value="ASR 156">ASR 156</option>
+      <option value="ASR 165">ASR 165</option>
+      <option value="ADP 155/160">ADP 155/160</option>
+      <option value="ADP 163/168">ADP 163/168</option>
+      <option value="AFR 167">AFR 167</option>
+      <option value="AFR 176">AFR 176</option>
+    </select>
+
+    <label for="ski_nr">Ski-Nr.</label>
+    <input type="text" id="ski_nr" name="ski_nr">
+
+    <div class="status unavailable" id="status">Ski unterwegs</div>
+
+    <button onclick="toggleStatus()">Verfügbarkeit wechseln</button>
+    <button onclick="submitFormular()">Formular einreichen</button>
+    <button onclick="downloadAlle()">Alle Einträge exportieren</button>
+  </div>
+
+  <div class="übersicht">
+    <h3>Übersicht: Ski-Verfügbarkeit</h3>
+    <table id="uebersichtTable">
+      <thead>
+        <tr>
+          <th>Modell</th>
+          <th>Länge</th>
+          <th>Status</th>
+          <th>Datum</th>
+          <th>Ort</th>
+          <th>Ort Test</th>
+          <th>Name</th>
+          <th>Ski-Nr.</th>
+          <th>Speichern</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <script>
+    const eintraege = [];
+    const bestaetigteRueckgaben = [];
+
+    function toggleStatus() {
+      const status = document.getElementById('status');
+      if (status.classList.contains('unavailable')) {
+        status.classList.remove('unavailable');
+        status.classList.add('available');
+        status.textContent = 'Ski verfügbar';
+      } else {
+        status.classList.remove('available');
+        status.classList.add('unavailable');
+        status.textContent = 'Ski unterwegs';
+      }
+    }
+
+    function addEintragDirekt(data) {
+      eintraege.push(data);
+      updateUebersicht();
+    }
+
+    function updateUebersicht() {
+      const tbody = document.querySelector('#uebersichtTable tbody');
+      tbody.innerHTML = '';
+
+      eintraege.forEach((e, index) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${e.Modell}</td>
+          <td>${e.Laenge}</td>
+          <td class="status-cell ${e.Status === 'Ski verfügbar' ? 'available' : 'unavailable'}" data-index="${index}">${e.Status}</td>
+          <td>${e.Datum}</td>
+          <td>${e.Ort}</td>
+          <td>${e.SkitestOrt}</td>
+          <td>${e.Name}</td>
+          <td>${e.SkiNummer}</td>
+          <td><button class="small-button" onclick="saveRueckgabe(${index})" ${e.Status !== 'Ski verfügbar' ? 'disabled' : ''}>Als Eintrag speichern</button></td>`;
+        tbody.appendChild(tr);
+      });
+
+      document.querySelectorAll('.status-cell').forEach(cell => {
+        cell.addEventListener('click', () => {
+          const idx = cell.getAttribute('data-index');
+          const entry = eintraege[idx];
+          entry.Status = (entry.Status === 'Ski verfügbar') ? 'Ski unterwegs' : 'Ski verfügbar';
+          updateUebersicht();
+        });
+      });
+    }
+
+    function saveRueckgabe(index) {
+      const eintrag = eintraege[index];
+      if (eintrag.Status === 'Ski verfügbar') {
+        bestaetigteRueckgaben.push(eintrag);
+        eintraege.splice(index, 1);
+        updateUebersicht();
+        alert('Eintrag gespeichert und aus der Übersicht entfernt.');
+      } else {
+        alert('Nur Einträge mit grünem Status können gespeichert werden.');
+      }
+    }
+
+    function submitFormular() {
+      const data = {
+        Name: document.getElementById('name').value,
+        Adresse: document.getElementById('address').value,
+        PLZ: document.getElementById('plz').value,
+        Ort: document.getElementById('ort').value,
+        Datum: document.getElementById('datum').value,
+        SkitestOrt: document.getElementById('ort_test').value,
+        Modell: document.getElementById('modell').value,
+        Laenge: '',
+        SkiNummer: document.getElementById('ski_nr').value,
+        Status: document.getElementById('status').textContent
+      };
+
+      addEintragDirekt(data);
+
+      alert('Eintrag gespeichert.');
+
+      document.querySelectorAll('input, select').forEach(el => el.value = '');
+      document.getElementById('status').className = 'status unavailable';
+      document.getElementById('status').textContent = 'Ski unterwegs';
+    }
+
+    function downloadAlle() {
+      if (bestaetigteRueckgaben.length === 0) {
+        alert('Keine bestätigten Rückgaben zum Exportieren.');
+        return;
+      }
+
+      const header = Object.keys(bestaetigteRueckgaben[0]).join("\t");
+      const rows = bestaetigteRueckgaben.map(e => Object.values(e).join("\t"));
+      const csv = [header, ...rows].join("\n");
+      const blob = new Blob([csv], { type: 'application/vnd.ms-excel' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `skitest_rueckgaben.xls`;
+      link.click();
+
+      alert('Datei wurde vorbereitet. Bitte sende sie an info@anavon-ski.com.');
+    }
+  </script>
 </body>
 </html>
