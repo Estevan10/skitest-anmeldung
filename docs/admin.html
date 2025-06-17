@@ -26,16 +26,20 @@
       background-color: #ccc;
       cursor: not-allowed;
     }
-    button.export-button {
+    button.export-button, button.refresh-button {
       margin-top: 20px;
       padding: 10px;
-      width: 100%;
+      width: 49%;
       background-color: #007bff;
       color: white;
       border: none;
       border-radius: 5px;
       font-size: 16px;
       cursor: pointer;
+    }
+    button.refresh-button {
+      background-color: #28a745;
+      float: right;
     }
   </style>
 </head>
@@ -50,7 +54,9 @@
           <th>Ort</th>
           <th>Ort Test</th>
           <th>Name</th>
-          <th>PLZ / Ort</th>
+          <th>Adresse</th>
+          <th>PLZ</th>
+          <th>Ort</th>
           <th>E-Mail</th>
           <th>Telefon</th>
           <th>Ski-Nr.</th>
@@ -60,23 +66,24 @@
       </thead>
       <tbody></tbody>
     </table>
+    <div id="leerHinweis" style="margin-top:20px; text-align:center; color:gray;"></div>
     <button class="export-button" onclick="exportAll()">Alle Einträge exportieren</button>
+    <button class="refresh-button" onclick="refreshNewEntries()">Neue Einträge hinzufügen</button>
   </div>
 
   <script>
-    const eintraege = [];
+    let eintraege = JSON.parse(localStorage.getItem("skitestEintraege") || "[]");
     const exportierteEintraege = JSON.parse(localStorage.getItem("skitestExportiert") || "[]");
-
-    function addEintrag(eintrag) {
-      eintraege.push(eintrag);
-      renderTable();
-    }
 
     function renderTable() {
       const tbody = document.querySelector('#adminTable tbody');
+      const leerHinweis = document.getElementById('leerHinweis');
       tbody.innerHTML = '';
+      let visibleRows = 0;
+
       eintraege.forEach((e, i) => {
         if (e.Status !== 'Ski unterwegs') return;
+        visibleRows++;
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td>${e.Modell}</td>
@@ -84,7 +91,9 @@
           <td>${e.Ort}</td>
           <td>${e.SkitestOrt}</td>
           <td>${e.Name}</td>
-          <td>${e.PLZOrt || ''}</td>
+          <td>${e.Adresse || ''}</td>
+          <td>${e.PLZ || ''}</td>
+          <td>${e.Ort2 || ''}</td>
           <td>${e.Email || ''}</td>
           <td>${e.Telefon || ''}</td>
           <td>${e.SkiNummer}</td>
@@ -94,16 +103,20 @@
         tbody.appendChild(tr);
       });
 
+      leerHinweis.innerHTML = (visibleRows === 0) ? "Aktuell keine offenen Rückgaben vorhanden." : "";
+
       document.querySelectorAll('.status-cell').forEach(cell => {
         const i = cell.dataset.idx;
         cell.onclick = () => {
           eintraege[i].Status = (eintraege[i].Status === 'Ski verfügbar') ? 'Ski unterwegs' : 'Ski verfügbar';
+          localStorage.setItem("skitestEintraege", JSON.stringify(eintraege));
           renderTable();
         };
       });
     }
 
     function markAsDone(i) {
+      if (eintraege[i].Status !== 'Ski verfügbar') return;
       exportierteEintraege.push(eintraege[i]);
       localStorage.setItem("skitestExportiert", JSON.stringify(exportierteEintraege));
       eintraege.splice(i, 1);
@@ -117,9 +130,11 @@
         return;
       }
 
-      const header = Object.keys(exportierteEintraege[0]).join("\\t");
-      const rows = exportierteEintraege.map(e => Object.values(e).join("\\t"));
-      const csv = [header, ...rows].join("\\n");
+      const header = ["Modell", "Datum", "Ort", "Ort Test", "Name", "Adresse", "PLZ", "Ort", "E-Mail", "Telefon", "Ski-Nr.", "Status"];
+      const rows = exportierteEintraege.map(e => [
+        e.Modell, e.Datum, e.Ort, e.SkitestOrt, e.Name, e.Adresse || '', e.PLZ || '', e.Ort2 || '', e.Email || '', e.Telefon || '', e.SkiNummer, e.Status
+      ]);
+      const csv = [header.join("\t"), ...rows.map(r => r.join("\t"))].join("\n");
       const blob = new Blob([csv], { type: 'application/vnd.ms-excel' });
       const link = document.createElement('a');
       link.href = URL.createObjectURL(blob);
@@ -127,12 +142,13 @@
       link.click();
     }
 
-    const gespeicherteEintraege = JSON.parse(localStorage.getItem('skitestEintraege') || '[]');
-    gespeicherteEintraege.forEach(entry => {
-      if (!entry.Status) entry.Status = 'Ski unterwegs';
-      eintraege.push(entry);
-    });
-    renderTable();
+    function refreshNewEntries() {
+      const alle = JSON.parse(localStorage.getItem("skitestEintraege") || "[]");
+      eintraege = alle.filter(e => !exportierteEintraege.some(ex => ex.Name === e.Name && ex.Datum === e.Datum && ex.SkiNummer === e.SkiNummer));
+      renderTable();
+    }
+
+    refreshNewEntries(); // initial
   </script>
 </body>
 </html>
