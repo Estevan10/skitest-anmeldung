@@ -12,32 +12,20 @@
     th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
     th { background-color: #eee; }
     tr:hover { background-color: #f1f1f1; }
-    .status-cell.available { background-color: #d4edda; color: #155724; font-weight: bold; }
-    .status-cell.unavailable { background-color: #f8d7da; color: #721c24; font-weight: bold; }
-    .small {
-      font-size: 12px; color: #666;
-    }
+    .status-cell.available { background-color: #d4edda; color: #155724; font-weight: bold; cursor: pointer; }
+    .status-cell.unavailable { background-color: #f8d7da; color: #721c24; font-weight: bold; cursor: pointer; }
+    .small { font-size: 12px; color: #666; }
     button.export-button, button.refresh-button {
-      margin-top: 20px;
-      padding: 10px;
-      width: 49%;
-      background-color: #007bff;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      font-size: 16px;
-      cursor: pointer;
+      margin-top: 20px; padding: 10px; width: 49%;
+      background-color: #007bff; color: white; border: none; border-radius: 5px; font-size: 16px; cursor: pointer;
     }
-    button.refresh-button {
-      background-color: #28a745;
-      float: right;
-    }
+    button.refresh-button { background-color: #28a745; float: right; }
     .center { text-align:center; }
   </style>
 </head>
 <body>
   <div class="container">
-    <h2>Übersicht: Skitest-Anmeldungen (nur „Ski unterwegs”)</h2>
+    <h2>Übersicht: Skitest-Anmeldungen</h2>
     <table id="adminTable">
       <thead>
         <tr>
@@ -50,7 +38,7 @@
           <th>E-Mail</th>
           <th>Telefon</th>
           <th>Ski-Nr.</th>
-          <th>Status<br><span class="small">(klicken zum Umschalten)</span></th>
+          <th>Status <br><span class="small">(klicken zum Umschalten)</span></th>
           <th class="center">Retour</th>
         </tr>
       </thead>
@@ -68,14 +56,14 @@
     let exportierteEintraege = JSON.parse(localStorage.getItem("skitestExportiert") || "[]");
 
     function combineAddress(e) {
-      // Neue Struktur aus dem Formular:
+      // Neue Struktur (ein Feld)
       if (e.Adresse_PLZOrt) return e.Adresse_PLZOrt;
-      // Fallback für alte Einträge:
+      // Alte Struktur (mehrere Felder)
       if (e.Adresse || e.PLZ || e.Ort2) {
         const rechts = [e.PLZ, e.Ort2].filter(Boolean).join(", ");
-        return [e.Adresse, rechts ? rechts : null].filter(Boolean).join(" / ");
+        return [e.Adresse, rechts || null].filter(Boolean).join(" / ");
       }
-      // Ganz alt (nur ein Feld PLZOrt):
+      // Ganz alte Struktur (PLZOrt)
       if (e.PLZOrt) return e.PLZOrt;
       return "";
     }
@@ -86,12 +74,12 @@
       tbody.innerHTML = '';
       let visible = 0;
 
+      // Zeige ALLE Einträge, egal welcher Status (nur bereits „retournierte“ sind nicht mehr in eintraege)
       eintraege.forEach((e, i) => {
-        if (e.Status !== 'Ski unterwegs') return;
         visible++;
-
         const tr = document.createElement('tr');
-        const statusClass = (e.Status === 'Ski verfügbar') ? 'available' : 'unavailable';
+        const isAvail = e.Status === 'Ski verfügbar';
+        const statusClass = isAvail ? 'available' : 'unavailable';
         const adresse = combineAddress(e);
 
         tr.innerHTML = `
@@ -104,7 +92,7 @@
           <td>${e.Email || ''}</td>
           <td>${e.Telefon || ''}</td>
           <td>${e.SkiNummer || ''}</td>
-          <td class="status-cell ${statusClass}" data-idx="${i}">${e.Status}</td>
+          <td class="status-cell ${statusClass}" data-idx="${i}">${e.Status || ''}</td>
           <td class="center">
             <input type="checkbox" data-retour-idx="${i}" title="Als retour markieren" />
           </td>
@@ -112,11 +100,11 @@
         tbody.appendChild(tr);
       });
 
-      leerHinweis.textContent = (visible === 0) ? "Aktuell keine offenen Rückgaben vorhanden." : "";
+      leerHinweis.textContent = (visible === 0) ? "Aktuell keine Einträge vorhanden." : "";
 
-      // Status-Zelle klickbar (toggle)
+      // Status per Klick toggeln (bleibt in der Liste!)
       document.querySelectorAll('.status-cell').forEach(cell => {
-        const i = cell.dataset.idx;
+        const i = +cell.dataset.idx;
         cell.onclick = () => {
           eintraege[i].Status = (eintraege[i].Status === 'Ski verfügbar') ? 'Ski unterwegs' : 'Ski verfügbar';
           localStorage.setItem("skitestEintraege", JSON.stringify(eintraege));
@@ -124,21 +112,22 @@
         };
       });
 
-      // Retour-Checkbox: sofortiger Export & Entfernen
+      // Retour-Checkbox: exportieren & aus Liste entfernen
       document.querySelectorAll('input[type="checkbox"][data-retour-idx]').forEach(box => {
         box.onchange = () => {
           const idx = Number(box.getAttribute('data-retour-idx'));
-          markAsReturned(idx);
+          if (box.checked) {
+            markAsReturned(idx);
+          }
         };
       });
     }
 
     function markAsReturned(i) {
-      // „Retour“ = Eintrag exportieren (mit Rückgabedatum) und aus der Übersicht entfernen
-      const entry = { ...eintraege[i] };
-      entry.RueckgabeDatum = new Date().toISOString().slice(0,10); // YYYY-MM-DD
+      // Kopie erstellen + Rückgabedatum
+      const entry = { ...eintraege[i], RueckgabeDatum: new Date().toISOString().slice(0,10) };
 
-      // Duplikate verhindern (Name+Datum+SkiNummer als einfache Heuristik)
+      // Duplikate vermeiden (Heuristik)
       const already = exportierteEintraege.some(ex =>
         ex.Name === entry.Name && ex.Datum === entry.Datum && ex.SkiNummer === entry.SkiNummer
       );
@@ -147,10 +136,9 @@
         localStorage.setItem("skitestExportiert", JSON.stringify(exportierteEintraege));
       }
 
-      // Aus „unterwegs“-Liste entfernen
+      // Aus der Live-Liste entfernen (erst JETZT verschwindet der Eintrag)
       eintraege.splice(i, 1);
       localStorage.setItem("skitestEintraege", JSON.stringify(eintraege));
-
       renderTable();
     }
 
@@ -193,7 +181,7 @@
       const exported = JSON.parse(localStorage.getItem("skitestExportiert") || "[]");
       exportierteEintraege = exported;
 
-      // Filtere Einträge, die bereits exportiert wurden (Heuristik)
+      // Entferne Einträge, die bereits als retour exportiert wurden (Sicherheit bei alten Daten)
       eintraege = alle.filter(e =>
         !exported.some(ex => ex.Name === e.Name && ex.Datum === e.Datum && ex.SkiNummer === e.SkiNummer)
       );
