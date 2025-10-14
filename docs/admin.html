@@ -19,10 +19,10 @@
     .status-cell.unavailable { background-color: #f8d7da; color: #721c24; }
     .small { font-size: 12px; color: #666; }
     button.export-button, button.refresh-button {
-      margin-top: 20px; padding: 10px; width: 49%;
-      background-color: #007bff; color: white; border: none; border-radius: 5px; font-size: 16px; cursor: pointer;
+      margin-top: 20px; padding: 10px; background-color: #007bff;
+      color: white; border: none; border-radius: 5px; font-size: 16px; cursor: pointer;
     }
-    button.refresh-button { background-color: #28a745; float: right; }
+    button.refresh-button { background-color: #28a745; }
     .center { text-align:center; }
     details { margin-top:10px; }
     pre { background:#fafafa; border:1px solid #ddd; padding:10px; border-radius:8px; max-height:240px; overflow:auto; }
@@ -66,7 +66,7 @@
 
     <div id="leerHinweis" style="margin-top:20px; text-align:center; color:gray;"></div>
 
-    <!-- Rohdaten-Panel für schnelle Diagnose -->
+    <!-- Rohdaten-Panel (Debug) -->
     <details>
       <summary>Rohdaten anzeigen (Debug)</summary>
       <pre id="raw"></pre>
@@ -74,6 +74,10 @@
   </div>
 
   <script>
+    // ===== Utilities =====
+    function safeParse(s){ try{ return s ? JSON.parse(s) : null; } catch { return null; } }
+
+    // ===== State =====
     let eintraege = safeParse(localStorage.getItem("skitestEintraege")) || [];
     let exportierteEintraege = safeParse(localStorage.getItem("skitestExportiert")) || [];
     let lastSeenUpdate = localStorage.getItem("skitestLastUpdate") || "";
@@ -81,30 +85,26 @@
     const filterBox = document.getElementById('filterUnterwegs');
     filterBox.addEventListener('change', renderTable);
 
-    // ======= Events zum Live-Update =======
+    // Live-Update über localStorage-Events
     window.addEventListener('storage', (e) => {
       if (e.key === 'skitestEintraege' || e.key === 'skitestLastUpdate') {
         refreshNewEntries();
       }
     });
+    // Instant-Update über BroadcastChannel
     try {
       const bc = new BroadcastChannel('skitest');
       bc.onmessage = (ev) => { if (ev?.data === 'updated') refreshNewEntries(); };
     } catch {}
 
-    // ======= Fallback: Polling, falls Events nicht feuern =======
+    // Fallback: Polling alle 2s
     setInterval(() => {
       const now = localStorage.getItem("skitestLastUpdate") || "";
       if (now && now !== lastSeenUpdate) {
         lastSeenUpdate = now;
         refreshNewEntries();
       }
-    }, 2000); // alle 2s prüfen
-
-    // ======= Utils =======
-    function safeParse(s) {
-      try { return s ? JSON.parse(s) : null; } catch { return null; }
-    }
+    }, 2000);
 
     function combineAddress(e) {
       if (e.Adresse_PLZOrt) return e.Adresse_PLZOrt; // neue Struktur
@@ -154,7 +154,6 @@
         cell.onclick = () => {
           eintraege[i].Status = (eintraege[i].Status === 'Ski verfügbar') ? 'Ski unterwegs' : 'Ski verfügbar';
           localStorage.setItem("skitestEintraege", JSON.stringify(eintraege));
-          // Ping für andere Tabs (und für Polling-Fallback)
           localStorage.setItem("skitestLastUpdate", String(Date.now()));
           try { new BroadcastChannel('skitest').postMessage('updated'); } catch {}
           renderTable();
@@ -255,7 +254,7 @@
       raw.textContent = JSON.stringify(o, null, 2);
     }
 
-    // Initial laden
+    // Initial
     refreshNewEntries();
   </script>
 </body>
