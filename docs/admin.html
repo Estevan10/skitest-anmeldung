@@ -7,13 +7,16 @@
   <style>
     body { font-family: sans-serif; margin: 20px; background: #f5f5f5; }
     .container { background: white; padding: 20px; border-radius: 10px; max-width: 1200px; margin: auto; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-    h2 { margin-bottom: 20px; }
+    h2 { margin-bottom: 10px; }
+    .toolbar { display:flex; align-items:center; gap:16px; margin-bottom:12px; }
+    .toolbar label { display:flex; align-items:center; gap:8px; }
     table { width: 100%; border-collapse: collapse; margin-top: 10px; }
     th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
     th { background-color: #eee; }
     tr:hover { background-color: #f1f1f1; }
-    .status-cell.available { background-color: #d4edda; color: #155724; font-weight: bold; cursor: pointer; }
-    .status-cell.unavailable { background-color: #f8d7da; color: #721c24; font-weight: bold; cursor: pointer; }
+    .status-cell { font-weight: bold; cursor: pointer; }
+    .status-cell.available { background-color: #d4edda; color: #155724; }
+    .status-cell.unavailable { background-color: #f8d7da; color: #721c24; }
     .small { font-size: 12px; color: #666; }
     button.export-button, button.refresh-button {
       margin-top: 20px; padding: 10px; width: 49%;
@@ -26,6 +29,15 @@
 <body>
   <div class="container">
     <h2>Übersicht: Skitest-Anmeldungen</h2>
+
+    <div class="toolbar">
+      <label>
+        <input type="checkbox" id="filterUnterwegs" />
+        Nur „Ski unterwegs” anzeigen
+      </label>
+      <span class="small">Status klickbar: „Ski unterwegs“ ⇄ „Ski verfügbar“. Export nur über „Retour“.</span>
+    </div>
+
     <table id="adminTable">
       <thead>
         <tr>
@@ -55,16 +67,16 @@
     let eintraege = JSON.parse(localStorage.getItem("skitestEintraege") || "[]");
     let exportierteEintraege = JSON.parse(localStorage.getItem("skitestExportiert") || "[]");
 
+    const filterBox = document.getElementById('filterUnterwegs');
+    filterBox.addEventListener('change', renderTable);
+
     function combineAddress(e) {
-      // Neue Struktur (ein Feld)
-      if (e.Adresse_PLZOrt) return e.Adresse_PLZOrt;
-      // Alte Struktur (mehrere Felder)
-      if (e.Adresse || e.PLZ || e.Ort2) {
+      if (e.Adresse_PLZOrt) return e.Adresse_PLZOrt;                 // neue Struktur
+      if (e.Adresse || e.PLZ || e.Ort2) {                            // alte Struktur
         const rechts = [e.PLZ, e.Ort2].filter(Boolean).join(", ");
         return [e.Adresse, rechts || null].filter(Boolean).join(" / ");
       }
-      // Ganz alte Struktur (PLZOrt)
-      if (e.PLZOrt) return e.PLZOrt;
+      if (e.PLZOrt) return e.PLZOrt;                                 // ganz alt
       return "";
     }
 
@@ -72,15 +84,16 @@
       const tbody = document.querySelector('#adminTable tbody');
       const leerHinweis = document.getElementById('leerHinweis');
       tbody.innerHTML = '';
-      let visible = 0;
 
-      // Zeige ALLE Einträge, egal welcher Status (nur bereits „retournierte“ sind nicht mehr in eintraege)
-      eintraege.forEach((e, i) => {
-        visible++;
+      const onlyUnterwegs = filterBox.checked;
+      const view = eintraege.filter(e => !onlyUnterwegs || e.Status === 'Ski unterwegs');
+
+      view.forEach((e, iView) => {
+        // Finde Index im Original-Array (stabil, falls gefiltert)
+        const i = eintraege.indexOf(e);
         const tr = document.createElement('tr');
         const isAvail = e.Status === 'Ski verfügbar';
         const statusClass = isAvail ? 'available' : 'unavailable';
-        const adresse = combineAddress(e);
 
         tr.innerHTML = `
           <td>${e.Modell || ''}</td>
@@ -88,21 +101,19 @@
           <td>${e.Ort || ''}</td>
           <td>${e.SkitestOrt || ''}</td>
           <td>${e.Name || ''}</td>
-          <td>${adresse}</td>
+          <td>${combineAddress(e)}</td>
           <td>${e.Email || ''}</td>
           <td>${e.Telefon || ''}</td>
           <td>${e.SkiNummer || ''}</td>
           <td class="status-cell ${statusClass}" data-idx="${i}">${e.Status || ''}</td>
-          <td class="center">
-            <input type="checkbox" data-retour-idx="${i}" title="Als retour markieren" />
-          </td>
+          <td class="center"><input type="checkbox" data-retour-idx="${i}" title="Als retour markieren" /></td>
         `;
         tbody.appendChild(tr);
       });
 
-      leerHinweis.textContent = (visible === 0) ? "Aktuell keine Einträge vorhanden." : "";
+      leerHinweis.textContent = view.length === 0 ? "Keine Einträge für diese Ansicht." : "";
 
-      // Status per Klick toggeln (bleibt in der Liste!)
+      // Status-Toggle: nur umschalten & speichern, NICHT entfernen/Export
       document.querySelectorAll('.status-cell').forEach(cell => {
         const i = +cell.dataset.idx;
         cell.onclick = () => {
@@ -112,22 +123,19 @@
         };
       });
 
-      // Retour-Checkbox: exportieren & aus Liste entfernen
+      // Retour: exportieren & aus der Liste entfernen
       document.querySelectorAll('input[type="checkbox"][data-retour-idx]').forEach(box => {
         box.onchange = () => {
           const idx = Number(box.getAttribute('data-retour-idx'));
-          if (box.checked) {
-            markAsReturned(idx);
-          }
+          if (box.checked) markAsReturned(idx);
         };
       });
     }
 
     function markAsReturned(i) {
-      // Kopie erstellen + Rückgabedatum
       const entry = { ...eintraege[i], RueckgabeDatum: new Date().toISOString().slice(0,10) };
 
-      // Duplikate vermeiden (Heuristik)
+      // Duplikate vermeiden
       const already = exportierteEintraege.some(ex =>
         ex.Name === entry.Name && ex.Datum === entry.Datum && ex.SkiNummer === entry.SkiNummer
       );
@@ -136,7 +144,7 @@
         localStorage.setItem("skitestExportiert", JSON.stringify(exportierteEintraege));
       }
 
-      // Aus der Live-Liste entfernen (erst JETZT verschwindet der Eintrag)
+      // Jetzt erst aus der Live-Liste entfernen
       eintraege.splice(i, 1);
       localStorage.setItem("skitestEintraege", JSON.stringify(eintraege));
       renderTable();
@@ -181,7 +189,7 @@
       const exported = JSON.parse(localStorage.getItem("skitestExportiert") || "[]");
       exportierteEintraege = exported;
 
-      // Entferne Einträge, die bereits als retour exportiert wurden (Sicherheit bei alten Daten)
+      // Entferne bereits exportierte (Rückgaben)
       eintraege = alle.filter(e =>
         !exported.some(ex => ex.Name === e.Name && ex.Datum === e.Datum && ex.SkiNummer === e.SkiNummer)
       );
