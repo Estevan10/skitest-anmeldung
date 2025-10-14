@@ -8,7 +8,7 @@
     body { font-family: sans-serif; margin: 20px; background: #f5f5f5; }
     .container { background: white; padding: 20px; border-radius: 10px; max-width: 1200px; margin: auto; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
     h2 { margin-bottom: 10px; }
-    .toolbar { display:flex; align-items:center; gap:16px; margin-bottom:12px; }
+    .toolbar { display:flex; align-items:center; gap:16px; margin-bottom:12px; flex-wrap: wrap; }
     .toolbar label { display:flex; align-items:center; gap:8px; }
     table { width: 100%; border-collapse: collapse; margin-top: 10px; }
     th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
@@ -24,13 +24,15 @@
     }
     button.refresh-button { background-color: #28a745; float: right; }
     .center { text-align:center; }
+    details { margin-top:10px; }
+    pre { background:#fafafa; border:1px solid #ddd; padding:10px; border-radius:8px; max-height:240px; overflow:auto; }
   </style>
 </head>
 <body>
   <div class="container">
     <h2>Übersicht: Skitest-Anmeldungen</h2>
 
-    <!-- NEU: kleines Debug -->
+    <!-- Debug-Zeile -->
     <div id="debug" class="small" style="color:#666; margin-bottom:8px;"></div>
 
     <div class="toolbar">
@@ -39,6 +41,8 @@
         Nur „Ski unterwegs” anzeigen
       </label>
       <span class="small">Status klickbar: „Ski unterwegs“ ⇄ „Ski verfügbar“. Export nur über „Retour“.</span>
+      <button class="refresh-button" onclick="refreshNewEntries()">Neue Einträge hinzufügen</button>
+      <button class="export-button" onclick="exportAll()">Alle gespeicherten Rückgaben exportieren</button>
     </div>
 
     <table id="adminTable">
@@ -62,18 +66,22 @@
 
     <div id="leerHinweis" style="margin-top:20px; text-align:center; color:gray;"></div>
 
-    <button class="export-button" onclick="exportAll()">Alle gespeicherten Rückgaben exportieren</button>
-    <button class="refresh-button" onclick="refreshNewEntries()">Neue Einträge hinzufügen</button>
+    <!-- Rohdaten-Panel für schnelle Diagnose -->
+    <details>
+      <summary>Rohdaten anzeigen (Debug)</summary>
+      <pre id="raw"></pre>
+    </details>
   </div>
 
   <script>
-    let eintraege = JSON.parse(localStorage.getItem("skitestEintraege") || "[]");
-    let exportierteEintraege = JSON.parse(localStorage.getItem("skitestExportiert") || "[]");
+    let eintraege = safeParse(localStorage.getItem("skitestEintraege")) || [];
+    let exportierteEintraege = safeParse(localStorage.getItem("skitestExportiert")) || [];
+    let lastSeenUpdate = localStorage.getItem("skitestLastUpdate") || "";
 
     const filterBox = document.getElementById('filterUnterwegs');
     filterBox.addEventListener('change', renderTable);
 
-    // NEU: Live-Update, wenn Formular speichert (storage + BroadcastChannel)
+    // ======= Events zum Live-Update =======
     window.addEventListener('storage', (e) => {
       if (e.key === 'skitestEintraege' || e.key === 'skitestLastUpdate') {
         refreshNewEntries();
@@ -84,13 +92,27 @@
       bc.onmessage = (ev) => { if (ev?.data === 'updated') refreshNewEntries(); };
     } catch {}
 
+    // ======= Fallback: Polling, falls Events nicht feuern =======
+    setInterval(() => {
+      const now = localStorage.getItem("skitestLastUpdate") || "";
+      if (now && now !== lastSeenUpdate) {
+        lastSeenUpdate = now;
+        refreshNewEntries();
+      }
+    }, 2000); // alle 2s prüfen
+
+    // ======= Utils =======
+    function safeParse(s) {
+      try { return s ? JSON.parse(s) : null; } catch { return null; }
+    }
+
     function combineAddress(e) {
-      if (e.Adresse_PLZOrt) return e.Adresse_PLZOrt;                 // neue Struktur
-      if (e.Adresse || e.PLZ || e.Ort2) {                            // alte Struktur
+      if (e.Adresse_PLZOrt) return e.Adresse_PLZOrt; // neue Struktur
+      if (e.Adresse || e.PLZ || e.Ort2) {            // alte Struktur
         const rechts = [e.PLZ, e.Ort2].filter(Boolean).join(", ");
         return [e.Adresse, rechts || null].filter(Boolean).join(" / ");
       }
-      if (e.PLZOrt) return e.PLZOrt;                                 // ganz alt
+      if (e.PLZOrt) return e.PLZOrt;                 // ganz alt
       return "";
     }
 
@@ -126,15 +148,20 @@
 
       leerHinweis.textContent = view.length === 0 ? "Keine Einträge für diese Ansicht." : "";
 
+      // Status toggeln (nicht entfernen)
       document.querySelectorAll('.status-cell').forEach(cell => {
         const i = +cell.dataset.idx;
         cell.onclick = () => {
           eintraege[i].Status = (eintraege[i].Status === 'Ski verfügbar') ? 'Ski unterwegs' : 'Ski verfügbar';
           localStorage.setItem("skitestEintraege", JSON.stringify(eintraege));
+          // Ping für andere Tabs (und für Polling-Fallback)
+          localStorage.setItem("skitestLastUpdate", String(Date.now()));
+          try { new BroadcastChannel('skitest').postMessage('updated'); } catch {}
           renderTable();
         };
       });
 
+      // Retour → exportieren & entfernen
       document.querySelectorAll('input[type="checkbox"][data-retour-idx]').forEach(box => {
         box.onchange = () => {
           const idx = Number(box.getAttribute('data-retour-idx'));
@@ -143,6 +170,7 @@
       });
 
       updateDebug();
+      updateRaw();
     }
 
     function markAsReturned(i) {
@@ -158,11 +186,14 @@
 
       eintraege.splice(i, 1);
       localStorage.setItem("skitestEintraege", JSON.stringify(eintraege));
+      localStorage.setItem("skitestLastUpdate", String(Date.now()));
+      try { new BroadcastChannel('skitest').postMessage('updated'); } catch {}
+
       renderTable();
     }
 
     function exportAll() {
-      exportierteEintraege = JSON.parse(localStorage.getItem("skitestExportiert") || "[]");
+      exportierteEintraege = safeParse(localStorage.getItem("skitestExportiert")) || [];
       if (exportierteEintraege.length === 0) {
         alert('Keine gespeicherten Rückgaben vorhanden.');
         return;
@@ -196,8 +227,8 @@
     }
 
     function refreshNewEntries() {
-      const alle = JSON.parse(localStorage.getItem("skitestEintraege") || "[]");
-      const exported = JSON.parse(localStorage.getItem("skitestExportiert") || "[]");
+      const alle = safeParse(localStorage.getItem("skitestEintraege")) || [];
+      const exported = safeParse(localStorage.getItem("skitestExportiert")) || [];
       exportierteEintraege = exported;
 
       eintraege = alle.filter(e =>
@@ -207,12 +238,25 @@
     }
 
     function updateDebug() {
-      const arr = JSON.parse(localStorage.getItem("skitestEintraege") || "[]");
+      const arr = safeParse(localStorage.getItem("skitestEintraege")) || [];
+      const last = localStorage.getItem("skitestLastUpdate") || "-";
       const dbg = document.getElementById('debug');
-      if (dbg) dbg.textContent = `Origin: ${location.origin} | Einträge: ${arr.length}`;
+      if (dbg) dbg.textContent = `Origin: ${location.origin} | Einträge: ${arr.length} | LastUpdate: ${last}`;
     }
 
-    refreshNewEntries(); // initial laden
+    function updateRaw() {
+      const raw = document.getElementById('raw');
+      if (!raw) return;
+      const o = {
+        skitestEintraege: safeParse(localStorage.getItem("skitestEintraege")) || [],
+        skitestExportiert: safeParse(localStorage.getItem("skitestExportiert")) || [],
+        skitestLastUpdate: localStorage.getItem("skitestLastUpdate") || null
+      };
+      raw.textContent = JSON.stringify(o, null, 2);
+    }
+
+    // Initial laden
+    refreshNewEntries();
   </script>
 </body>
 </html>
