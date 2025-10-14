@@ -80,7 +80,7 @@
     <label for="name">Vorname / Name</label>
     <input type="text" id="name" required />
 
-    <label for="plz_ort">PLZ / Ort</label>
+    <label for="plz_ort">Adresse / PLZ, Ort</label>
     <input type="text" id="plz_ort" required />
 
     <label for="email">E-Mail</label>
@@ -209,12 +209,12 @@
         Datum: document.getElementById('datum').value,
         Ort: document.getElementById('ort_test').value,
         Name: document.getElementById('name').value,
-        PLZOrt: document.getElementById('plz_ort').value,
+        Adresse_PLZOrt: document.getElementById('plz_ort').value,
         Email: document.getElementById('email').value,
         Telefon: document.getElementById('telefon').value,
         SkiNummer: document.getElementById('ski_nr').value,
         Bemerkungen: document.getElementById('bemerkungen').value,
-        Unterschrift: canvas.toDataURL(), // speichert Bild als Base64
+        Unterschrift: canvas.toDataURL(),
         Status: 'Ski unterwegs'
       };
 
