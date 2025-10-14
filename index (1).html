@@ -33,23 +33,34 @@
       border-radius: 8px;
     }
     .signature-container {
-      margin-top: 15px;
+      margin-top: 20px;
       background: #fafafa;
       border: 1px solid #ddd;
       border-radius: 8px;
       padding: 10px;
     }
-    .signature-container label {
-      font-weight: bold;
-      display: block;
-      margin-bottom: 5px;
+    canvas {
+      border: 1px solid #aaa;
+      border-radius: 5px;
+      width: 100%;
+      height: 150px;
+      background-color: white;
+      cursor: crosshair;
     }
-    .signature-note {
-      font-size: 12px;
-      color: #666;
-      margin-top: 5px;
+    .signature-buttons {
+      margin-top: 8px;
+      text-align: right;
     }
-    button {
+    .signature-buttons button {
+      background: #ccc;
+      color: #000;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    button.submit {
       margin-top: 25px;
       padding: 12px;
       width: 100%;
@@ -125,17 +136,62 @@
     </div>
 
     <div class="signature-container">
-      <label for="unterschrift">Unterschrift (Bestätigung des Haftungsausschlusses)</label>
-      <input type="text" id="unterschrift" placeholder="Bitte Namen eingeben" required />
-      <div class="signature-note">Mit der Unterschrift wird der Haftungsausschluss akzeptiert.</div>
+      <label>Unterschrift (Bestätigung des Haftungsausschlusses)</label>
+      <canvas id="signature-pad"></canvas>
+      <div class="signature-buttons">
+        <button type="button" onclick="clearSignature()">Löschen</button>
+      </div>
     </div>
 
-    <button onclick="submitFormular()">Abschicken</button>
+    <button class="submit" onclick="submitFormular()">Abschicken</button>
   </div>
 
   <script>
+    const canvas = document.getElementById('signature-pad');
+    const ctx = canvas.getContext('2d');
+    let drawing = false;
+
+    function startPosition(e) {
+      drawing = true;
+      draw(e);
+    }
+    function endPosition() {
+      drawing = false;
+      ctx.beginPath();
+    }
+    function draw(e) {
+      if (!drawing) return;
+      const rect = canvas.getBoundingClientRect();
+      const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+      const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+      ctx.lineWidth = 2;
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = '#000';
+      ctx.lineTo(x, y);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+    }
+    canvas.addEventListener('mousedown', startPosition);
+    canvas.addEventListener('mouseup', endPosition);
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('touchstart', startPosition);
+    canvas.addEventListener('touchend', endPosition);
+    canvas.addEventListener('touchmove', draw);
+
+    function clearSignature() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    function isSignatureEmpty() {
+      const blank = document.createElement('canvas');
+      blank.width = canvas.width;
+      blank.height = canvas.height;
+      return canvas.toDataURL() === blank.toDataURL();
+    }
+
     function submitFormular() {
-      const requiredFields = ['name', 'plz_ort', 'email', 'telefon', 'datum', 'ort_test', 'modell', 'ski_nr', 'unterschrift'];
+      const requiredFields = ['name', 'plz_ort', 'email', 'telefon', 'datum', 'ort_test', 'modell', 'ski_nr'];
       for (const id of requiredFields) {
         const el = document.getElementById(id);
         if (!el.value) {
@@ -143,19 +199,22 @@
           return;
         }
       }
+      if (isSignatureEmpty()) {
+        alert('Bitte unterschreibe zur Bestätigung des Haftungsausschlusses.');
+        return;
+      }
 
       const data = {
         Modell: document.getElementById('modell').value,
         Datum: document.getElementById('datum').value,
         Ort: document.getElementById('ort_test').value,
-        SkitestOrt: document.getElementById('ort_test').value,
         Name: document.getElementById('name').value,
         PLZOrt: document.getElementById('plz_ort').value,
         Email: document.getElementById('email').value,
         Telefon: document.getElementById('telefon').value,
         SkiNummer: document.getElementById('ski_nr').value,
         Bemerkungen: document.getElementById('bemerkungen').value,
-        Unterschrift: document.getElementById('unterschrift').value,
+        Unterschrift: canvas.toDataURL(), // speichert Bild als Base64
         Status: 'Ski unterwegs'
       };
 
@@ -164,7 +223,7 @@
       localStorage.setItem("skitestEintraege", JSON.stringify(gespeicherteEintraege));
 
       alert("Anmeldung gespeichert. Vielen Dank!");
-      document.querySelector("form")?.reset();
+      clearSignature();
       window.location.reload();
     }
   </script>
