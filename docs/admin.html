@@ -30,6 +30,9 @@
   <div class="container">
     <h2>Übersicht: Skitest-Anmeldungen</h2>
 
+    <!-- NEU: kleines Debug -->
+    <div id="debug" class="small" style="color:#666; margin-bottom:8px;"></div>
+
     <div class="toolbar">
       <label>
         <input type="checkbox" id="filterUnterwegs" />
@@ -70,6 +73,17 @@
     const filterBox = document.getElementById('filterUnterwegs');
     filterBox.addEventListener('change', renderTable);
 
+    // NEU: Live-Update, wenn Formular speichert (storage + BroadcastChannel)
+    window.addEventListener('storage', (e) => {
+      if (e.key === 'skitestEintraege' || e.key === 'skitestLastUpdate') {
+        refreshNewEntries();
+      }
+    });
+    try {
+      const bc = new BroadcastChannel('skitest');
+      bc.onmessage = (ev) => { if (ev?.data === 'updated') refreshNewEntries(); };
+    } catch {}
+
     function combineAddress(e) {
       if (e.Adresse_PLZOrt) return e.Adresse_PLZOrt;                 // neue Struktur
       if (e.Adresse || e.PLZ || e.Ort2) {                            // alte Struktur
@@ -88,8 +102,7 @@
       const onlyUnterwegs = filterBox.checked;
       const view = eintraege.filter(e => !onlyUnterwegs || e.Status === 'Ski unterwegs');
 
-      view.forEach((e, iView) => {
-        // Finde Index im Original-Array (stabil, falls gefiltert)
+      view.forEach((e) => {
         const i = eintraege.indexOf(e);
         const tr = document.createElement('tr');
         const isAvail = e.Status === 'Ski verfügbar';
@@ -113,7 +126,6 @@
 
       leerHinweis.textContent = view.length === 0 ? "Keine Einträge für diese Ansicht." : "";
 
-      // Status-Toggle: nur umschalten & speichern, NICHT entfernen/Export
       document.querySelectorAll('.status-cell').forEach(cell => {
         const i = +cell.dataset.idx;
         cell.onclick = () => {
@@ -123,19 +135,19 @@
         };
       });
 
-      // Retour: exportieren & aus der Liste entfernen
       document.querySelectorAll('input[type="checkbox"][data-retour-idx]').forEach(box => {
         box.onchange = () => {
           const idx = Number(box.getAttribute('data-retour-idx'));
           if (box.checked) markAsReturned(idx);
         };
       });
+
+      updateDebug();
     }
 
     function markAsReturned(i) {
       const entry = { ...eintraege[i], RueckgabeDatum: new Date().toISOString().slice(0,10) };
 
-      // Duplikate vermeiden
       const already = exportierteEintraege.some(ex =>
         ex.Name === entry.Name && ex.Datum === entry.Datum && ex.SkiNummer === entry.SkiNummer
       );
@@ -144,7 +156,6 @@
         localStorage.setItem("skitestExportiert", JSON.stringify(exportierteEintraege));
       }
 
-      // Jetzt erst aus der Live-Liste entfernen
       eintraege.splice(i, 1);
       localStorage.setItem("skitestEintraege", JSON.stringify(eintraege));
       renderTable();
@@ -189,14 +200,19 @@
       const exported = JSON.parse(localStorage.getItem("skitestExportiert") || "[]");
       exportierteEintraege = exported;
 
-      // Entferne bereits exportierte (Rückgaben)
       eintraege = alle.filter(e =>
         !exported.some(ex => ex.Name === e.Name && ex.Datum === e.Datum && ex.SkiNummer === e.SkiNummer)
       );
       renderTable();
     }
 
-    refreshNewEntries(); // initial
+    function updateDebug() {
+      const arr = JSON.parse(localStorage.getItem("skitestEintraege") || "[]");
+      const dbg = document.getElementById('debug');
+      if (dbg) dbg.textContent = `Origin: ${location.origin} | Einträge: ${arr.length}`;
+    }
+
+    refreshNewEntries(); // initial laden
   </script>
 </body>
 </html>
