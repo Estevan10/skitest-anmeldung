@@ -27,8 +27,7 @@
     }
     canvas {
       border: 1px solid #aaa; border-radius: 5px; width: 100%; height: 150px;
-      background-color: white; touch-action: none; /* besseres Zeichnen am Handy */
-      cursor: crosshair;
+      background-color: white; touch-action: none; cursor: crosshair;
     }
     .signature-buttons { margin-top: 8px; text-align: right; }
     .signature-buttons button {
@@ -46,7 +45,6 @@
   <div class="form-container">
     <h2>Skitest Anmeldung</h2>
 
-    <!-- Nutze ein echtes Form, damit Reset sauber klappt -->
     <form id="skitest-form" onsubmit="event.preventDefault(); submitFormular();">
       <label for="name">Vorname / Name</label>
       <input type="text" id="name" required />
@@ -123,62 +121,41 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
   <script>
-    // ===== Signatur-Canvas einrichten (scharf auf Retina) =====
+    // ===== Signatur-Canvas (retina-scharf) =====
     const canvas = document.getElementById('signature-pad');
     const ctx = canvas.getContext('2d');
 
     function resizeCanvas() {
       const ratio = Math.max(window.devicePixelRatio || 1, 1);
-      const displayWidth = canvas.clientWidth;
-      const displayHeight = canvas.clientHeight;
-      canvas.width = displayWidth * ratio;
-      canvas.height = displayHeight * ratio;
-      ctx.scale(ratio, ratio);
-      ctx.lineWidth = 2;
-      ctx.lineCap = 'round';
-      ctx.strokeStyle = '#000';
+      const w = canvas.clientWidth, h = canvas.clientHeight;
+      canvas.width = w * ratio; canvas.height = h * ratio;
+      ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+      ctx.lineWidth = 2; ctx.lineCap = 'round'; ctx.strokeStyle = '#000';
     }
     resizeCanvas();
-    window.addEventListener('resize', () => {
-      // Bild zwischenspeichern, Canvas neu skalieren, Bild zurückmalen (optional)
-      const data = canvas.toDataURL();
-      resizeCanvas();
-      const img = new Image();
-      img.onload = () => ctx.drawImage(img, 0, 0, canvas.clientWidth, canvas.clientHeight);
-      img.src = data;
-    });
+    window.addEventListener('resize', resizeCanvas);
 
     let drawing = false;
     function pos(e) {
-      const rect = canvas.getBoundingClientRect();
-      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-      return { x: clientX - rect.left, y: clientY - rect.top };
+      const r = canvas.getBoundingClientRect();
+      const cx = e.touches ? e.touches[0].clientX : e.clientX;
+      const cy = e.touches ? e.touches[0].clientY : e.clientY;
+      return { x: cx - r.left, y: cy - r.top };
     }
-    function start(e) { drawing = true; const {x,y} = pos(e); ctx.beginPath(); ctx.moveTo(x,y); e.preventDefault(); }
-    function move(e) {
-      if (!drawing) return;
-      const {x,y} = pos(e);
-      ctx.lineTo(x,y); ctx.stroke();
-      e.preventDefault();
-    }
+    function start(e){ drawing = true; const {x,y}=pos(e); ctx.beginPath(); ctx.moveTo(x,y); e.preventDefault();}
+    function move(e){ if(!drawing) return; const {x,y}=pos(e); ctx.lineTo(x,y); ctx.stroke(); e.preventDefault();}
     function end(e){ drawing = false; e.preventDefault(); }
 
     canvas.addEventListener('mousedown', start);
     canvas.addEventListener('mousemove', move);
     canvas.addEventListener('mouseup', end);
     canvas.addEventListener('mouseleave', end);
-
     canvas.addEventListener('touchstart', start, {passive:false});
     canvas.addEventListener('touchmove', move, {passive:false});
     canvas.addEventListener('touchend', end);
 
-    function clearSignature() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-    }
-
-    function isSignatureEmpty() {
-      // Prüft auf leeres Canvas
+    function clearSignature(){ ctx.clearRect(0,0,canvas.width,canvas.height); }
+    function isSignatureEmpty(){
       const blank = document.createElement('canvas');
       blank.width = canvas.width; blank.height = canvas.height;
       return canvas.toDataURL() === blank.toDataURL();
@@ -189,94 +166,64 @@
       const { jsPDF } = window.jspdf;
       const pdf = new jsPDF({ unit: 'mm', format: 'a4' });
 
-      // Kopf
-      pdf.setFontSize(16);
-      pdf.text('Skitest Anmeldung', 14, 18);
-      pdf.setFontSize(10);
-      pdf.text(`Erfasst am: ${new Date().toLocaleString()}`, 14, 25);
+      pdf.setFontSize(16); pdf.text('Skitest Anmeldung', 14, 18);
+      pdf.setFontSize(10); pdf.text(`Erfasst am: ${new Date().toLocaleString()}`, 14, 25);
 
-      // Teilnehmer
       let y = 35;
-      pdf.setFont(undefined, 'bold'); pdf.text('Teilnehmer', 14, y); y += 6;
-      pdf.setFont(undefined, 'normal');
-      pdf.text(`Name: ${data.Name || ''}`, 14, y); y += 6;
-      pdf.text(`Adresse / PLZ, Ort: ${data.Adresse_PLZOrt || ''}`, 14, y); y += 6;
-      pdf.text(`E-Mail: ${data.Email || ''}`, 14, y); y += 6;
-      pdf.text(`Telefon: ${data.Telefon || ''}`, 14, y); y += 8;
+      pdf.setFont(undefined,'bold'); pdf.text('Teilnehmer', 14, y); y+=6;
+      pdf.setFont(undefined,'normal');
+      pdf.text(`Name: ${data.Name||''}`, 14, y); y+=6;
+      pdf.text(`Adresse / PLZ, Ort: ${data.Adresse_PLZOrt||''}`, 14, y); y+=6;
+      pdf.text(`E-Mail: ${data.Email||''}`, 14, y); y+=6;
+      pdf.text(`Telefon: ${data.Telefon||''}`, 14, y); y+=8;
 
-      // Skitest
-      pdf.setFont(undefined, 'bold'); pdf.text('Skitest', 14, y); y += 6;
-      pdf.setFont(undefined, 'normal');
-      pdf.text(`Datum: ${data.Datum || ''}`, 14, y); y += 6;
-      pdf.text(`Ort: ${data.Ort || ''}`, 14, y); y += 6;
-      pdf.text(`Skitest-Ort: ${data.SkitestOrt || ''}`, 14, y); y += 6;
-      pdf.text(`Modell: ${data.Modell || ''}`, 14, y); y += 6;
-      pdf.text(`Ski-Nr.: ${data.SkiNummer || ''}`, 14, y); y += 8;
+      pdf.setFont(undefined,'bold'); pdf.text('Skitest', 14, y); y+=6;
+      pdf.setFont(undefined,'normal');
+      pdf.text(`Datum: ${data.Datum||''}`, 14, y); y+=6;
+      pdf.text(`Ort: ${data.Ort||''}`, 14, y); y+=6;
+      pdf.text(`Skitest-Ort: ${data.SkitestOrt||''}`, 14, y); y+=6;
+      pdf.text(`Modell: ${data.Modell||''}`, 14, y); y+=6;
+      pdf.text(`Ski-Nr.: ${data.SkiNummer||''}`, 14, y); y+=8;
 
-      // Bemerkungen
-      pdf.setFont(undefined, 'bold'); pdf.text('Bemerkungen', 14, y); y += 6;
-      pdf.setFont(undefined, 'normal');
-      const wrapped = pdf.splitTextToSize((data.Bemerkungen || '').toString(), 180);
-      pdf.text(wrapped, 14, y);
-      y += Math.max(8, wrapped.length * 5) + 4;
+      pdf.setFont(undefined,'bold'); pdf.text('Bemerkungen', 14, y); y+=6;
+      pdf.setFont(undefined,'normal');
+      const wrapped = pdf.splitTextToSize((data.Bemerkungen||'').toString(), 180);
+      pdf.text(wrapped, 14, y); y += Math.max(8, wrapped.length*5) + 4;
 
-      // Haftungsausschluss
       const disclaimer = [
         'Haftungsausschluss:',
         'Der Kunde / die Kundin handelt auf eigene Verantwortung.',
         'Für Schäden durch falsche Einstellung, unsachgemässen Gebrauch, Sturz oder Verlust haftet der Kunde / die Kundin selbst.',
         'Bei Totalschaden ist der Wiederbeschaffungswert zu ersetzen.'
       ];
-      pdf.setFont(undefined, 'bold'); pdf.text(disclaimer[0], 14, y); y += 6;
-      pdf.setFont(undefined, 'normal');
-      pdf.text(pdf.splitTextToSize(disclaimer.slice(1).join(' '), 180), 14, y);
-      y += 18;
+      pdf.setFont(undefined,'bold'); pdf.text(disclaimer[0], 14, y); y+=6;
+      pdf.setFont(undefined,'normal'); pdf.text(pdf.splitTextToSize(disclaimer.slice(1).join(' '),180), 14, y); y+=18;
 
-      // Unterschrift (Bild)
       try {
         if (data.UnterschriftImg) {
-          pdf.setFont(undefined, 'bold');
-          pdf.text('Unterschrift (Bestätigung des Haftungsausschlusses):', 14, y); y += 6;
-
-          // Bildgröße berechnen
-          const img = new Image();
-          img.src = data.UnterschriftImg;
+          pdf.setFont(undefined,'bold'); pdf.text('Unterschrift (Bestätigung des Haftungsausschlusses):', 14, y); y+=6;
+          const img = new Image(); img.src = data.UnterschriftImg;
           await new Promise(res => { img.onload = res; });
-
-          const maxW = 80; // mm
-          const imgRatio = img.height / img.width;
-          const w = maxW;
-          const h = maxW * imgRatio;
-
+          const maxW = 80, ratio = img.height/img.width, w = maxW, h = maxW*ratio;
           pdf.addImage(data.UnterschriftImg, 'PNG', 14, y, w, h, undefined, 'FAST');
           y += h + 10;
         }
-      } catch (e) {
-        // Bei Bild-Fehler einfach ohne Signatur speichern
-      }
+      } catch(e) {}
 
-      // Dateiname
-      const safeName = (data.Name || 'Unbekannt').replace(/[^\w\-äöüÄÖÜß ]+/g, '_');
+      const safeName = (data.Name||'Unbekannt').replace(/[^\w\-äöüÄÖÜß ]+/g,'_');
       const fileName = `Skitest_${safeName}_${data.Datum || new Date().toISOString().slice(0,10)}.pdf`;
-      pdf.save(fileName); // → Browser speichert automatisch in „Downloads“
+      pdf.save(fileName);
     }
 
     // ===== Formular-Submit =====
     function submitFormular() {
-      const required = ['name', 'plz_ort', 'email', 'telefon', 'datum', 'ort_test', 'modell', 'ski_nr'];
+      const required = ['name','plz_ort','email','telefon','datum','ort_test','modell','ski_nr'];
       for (const id of required) {
         const el = document.getElementById(id);
-        if (!el.value) {
-          alert('Bitte fülle alle Pflichtfelder korrekt aus.');
-          return;
-        }
+        if (!el.value) { alert('Bitte fülle alle Pflichtfelder korrekt aus.'); return; }
       }
-      if (isSignatureEmpty()) {
-        alert('Bitte unterschreibe zur Bestätigung des Haftungsausschlusses.');
-        return;
-      }
+      if (isSignatureEmpty()) { alert('Bitte unterschreibe zur Bestätigung des Haftungsausschlusses.'); return; }
 
-      // Daten sammeln
       const data = {
         Modell: document.getElementById('modell').value,
         Datum: document.getElementById('datum').value,
@@ -288,30 +235,26 @@
         Telefon: document.getElementById('telefon').value,
         SkiNummer: document.getElementById('ski_nr').value,
         Bemerkungen: document.getElementById('bemerkungen').value,
-        // Für Übersicht / Workflow
         Unterschrift: 'vorhanden',
         Status: 'Ski unterwegs'
       };
 
-      // In Übersicht speichern (localStorage)
+      // In Übersicht speichern
       let gespeicherte = JSON.parse(localStorage.getItem("skitestEintraege") || "[]");
       gespeicherte.push(data);
       localStorage.setItem("skitestEintraege", JSON.stringify(gespeicherte));
 
-      // PDF erzeugen & herunterladen (inkl. echter Unterschrift)
-      const payloadForPDF = {
-        ...data,
-        UnterschriftImg: canvas.toDataURL() // Signatur-Bild als DataURL
-      };
+      // Pings an Übersicht (3 Wege: storage + BroadcastChannel + LastUpdate)
+      localStorage.setItem("skitestLastUpdate", String(Date.now()));
+      try { new BroadcastChannel('skitest').postMessage('updated'); } catch {}
+
+      // PDF erzeugen
+      const payloadForPDF = { ...data, UnterschriftImg: canvas.toDataURL() };
       generateAndDownloadPDF(payloadForPDF);
 
       alert("Anmeldung gespeichert & PDF erstellt. Vielen Dank!");
-
-      // Formular zurücksetzen
       document.getElementById('skitest-form').reset();
       clearSignature();
-      // Optional: Seite neu laden, falls du das bevorzugst
-      // window.location.reload();
     }
   </script>
 </body>
