@@ -1,13 +1,172 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Skitest Anmeldung</title>
-  <!-- Styles und Inhalte wie im Textdoc -->
+  <style>
+    body { font-family: sans-serif; margin: 20px; background: #f0f0f0; }
+    .form-container {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      max-width: 600px;
+      margin: auto;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    label { display: block; margin-top: 15px; }
+    input, select, textarea {
+      width: 100%;
+      padding: 8px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+    textarea { resize: vertical; min-height: 80px; }
+    .disclaimer-box {
+      font-size: 12px;
+      color: #555;
+      line-height: 1.5;
+      background: #f9f9f9;
+      border: 1px solid #ddd;
+      padding: 10px;
+      margin-top: 20px;
+      border-radius: 8px;
+    }
+    .signature-container {
+      margin-top: 15px;
+      background: #fafafa;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 10px;
+    }
+    .signature-container label {
+      font-weight: bold;
+      display: block;
+      margin-bottom: 5px;
+    }
+    .signature-note {
+      font-size: 12px;
+      color: #666;
+      margin-top: 5px;
+    }
+    button {
+      margin-top: 25px;
+      padding: 12px;
+      width: 100%;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+  </style>
 </head>
 <body>
-  <!-- Hier kommt der vollständige HTML-Inhalt aus dem Canvas -->
-  <h1>Diese Version ist als Fallback sichtbar, falls etwas fehlt.</h1>
+  <div class="form-container">
+    <h2>Skitest Anmeldung</h2>
+
+    <label for="name">Vorname / Name</label>
+    <input type="text" id="name" required />
+
+    <label for="plz_ort">PLZ / Ort</label>
+    <input type="text" id="plz_ort" required />
+
+    <label for="email">E-Mail</label>
+    <input type="email" id="email" required />
+
+    <label for="telefon">Telefon</label>
+    <input type="text" id="telefon" required />
+
+    <label for="datum">Datum</label>
+    <input type="date" id="datum" required />
+
+    <label for="ort_test">Skitest-Ort</label>
+    <select id="ort_test" required>
+      <option value="">Bitte wählen</option>
+      <option value="Arosa">Arosa</option>
+      <option value="Lenzerheide">Lenzerheide</option>
+      <option value="Madrisa">Madrisa</option>
+      <option value="Eigergletscher">Eigergletscher</option>
+    </select>
+
+    <label for="modell">Skimodell inkl. Länge</label>
+    <select id="modell" required>
+      <option value="">Bitte wählen</option>
+      <option value="ARX 150">ARX 150</option>
+      <option value="ARX 156">ARX 156</option>
+      <option value="ARX 164">ARX 164</option>
+      <option value="ARX 172">ARX 172</option>
+      <option value="ARX 150 PRO">ARX 150 PRO</option>
+      <option value="ARX 156 PRO">ARX 156 PRO</option>
+      <option value="ARX 164 PRO">ARX 164 PRO</option>
+      <option value="ARX 172 PRO">ARX 172 PRO</option>
+      <option value="ASR 132">ASR 132</option>
+      <option value="ASR 144">ASR 144</option>
+      <option value="ASR 156">ASR 156</option>
+      <option value="ASR 165">ASR 165</option>
+      <option value="ADP 155/160">ADP 155/160</option>
+      <option value="ADP 163/168">ADP 163/168</option>
+      <option value="AFR 167">AFR 167</option>
+      <option value="AFR 176">AFR 176</option>
+    </select>
+
+    <label for="ski_nr">Ski-Nr.</label>
+    <input type="text" id="ski_nr" required />
+
+    <label for="bemerkungen">Bemerkungen (optional)</label>
+    <textarea id="bemerkungen" placeholder="z.B. spezielle Wünsche oder Hinweise..."></textarea>
+
+    <div class="disclaimer-box">
+      <strong>Haftungsausschluss:</strong><br>
+      Der Kunde / die Kundin handelt auf eigene Verantwortung.<br>
+      Für Schäden durch falsche Einstellung, unsachgemässen Gebrauch, Sturz oder Verlust haftet der Kunde / die Kundin selbst.<br>
+      Bei Totalschaden ist der Wiederbeschaffungswert zu ersetzen.
+    </div>
+
+    <div class="signature-container">
+      <label for="unterschrift">Unterschrift (Bestätigung des Haftungsausschlusses)</label>
+      <input type="text" id="unterschrift" placeholder="Bitte Namen eingeben" required />
+      <div class="signature-note">Mit der Unterschrift wird der Haftungsausschluss akzeptiert.</div>
+    </div>
+
+    <button onclick="submitFormular()">Abschicken</button>
+  </div>
+
+  <script>
+    function submitFormular() {
+      const requiredFields = ['name', 'plz_ort', 'email', 'telefon', 'datum', 'ort_test', 'modell', 'ski_nr', 'unterschrift'];
+      for (const id of requiredFields) {
+        const el = document.getElementById(id);
+        if (!el.value) {
+          alert('Bitte fülle alle Pflichtfelder korrekt aus.');
+          return;
+        }
+      }
+
+      const data = {
+        Modell: document.getElementById('modell').value,
+        Datum: document.getElementById('datum').value,
+        Ort: document.getElementById('ort_test').value,
+        SkitestOrt: document.getElementById('ort_test').value,
+        Name: document.getElementById('name').value,
+        PLZOrt: document.getElementById('plz_ort').value,
+        Email: document.getElementById('email').value,
+        Telefon: document.getElementById('telefon').value,
+        SkiNummer: document.getElementById('ski_nr').value,
+        Bemerkungen: document.getElementById('bemerkungen').value,
+        Unterschrift: document.getElementById('unterschrift').value,
+        Status: 'Ski unterwegs'
+      };
+
+      let gespeicherteEintraege = JSON.parse(localStorage.getItem("skitestEintraege") || "[]");
+      gespeicherteEintraege.push(data);
+      localStorage.setItem("skitestEintraege", JSON.stringify(gespeicherteEintraege));
+
+      alert("Anmeldung gespeichert. Vielen Dank!");
+      document.querySelector("form")?.reset();
+      window.location.reload();
+    }
+  </script>
 </body>
 </html>
