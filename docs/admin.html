@@ -19,21 +19,34 @@
     .status-cell.unavailable { background-color: #f8d7da; color: #721c24; }
     .small { font-size: 12px; color: #666; }
     button.export-button, button.refresh-button {
-      margin-top: 20px; padding: 10px; background-color: #007bff;
-      color: white; border: none; border-radius: 5px; font-size: 16px; cursor: pointer;
+      padding: 10px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+      cursor: pointer;
     }
     button.refresh-button { background-color: #28a745; }
+
+    /* Buttons unten nebeneinander */
+    .actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 20px;
+    }
+    .actions > button { flex: 1; }
+
+    @media (max-width: 520px) {
+      .actions { flex-direction: column; }
+    }
+
     .center { text-align:center; }
-    details { margin-top:10px; }
-    pre { background:#fafafa; border:1px solid #ddd; padding:10px; border-radius:8px; max-height:240px; overflow:auto; }
   </style>
 </head>
 <body>
   <div class="container">
     <h2>Übersicht: Skitest-Anmeldungen</h2>
-
-    <!-- Debug-Zeile -->
-    <div id="debug" class="small" style="color:#666; margin-bottom:8px;"></div>
 
     <div class="toolbar">
       <label>
@@ -41,8 +54,6 @@
         Nur „Ski unterwegs” anzeigen
       </label>
       <span class="small">Status klickbar: „Ski unterwegs“ ⇄ „Ski verfügbar“. Export nur über „Retour“.</span>
-      <button class="refresh-button" onclick="refreshNewEntries()">Neue Einträge hinzufügen</button>
-      <button class="export-button" onclick="exportAll()">Alle gespeicherten Rückgaben exportieren</button>
     </div>
 
     <table id="adminTable">
@@ -66,11 +77,11 @@
 
     <div id="leerHinweis" style="margin-top:20px; text-align:center; color:gray;"></div>
 
-    <!-- Rohdaten-Panel (Debug) -->
-    <details>
-      <summary>Rohdaten anzeigen (Debug)</summary>
-      <pre id="raw"></pre>
-    </details>
+    <!-- Buttons unten -->
+    <div class="actions">
+      <button class="refresh-button" onclick="refreshNewEntries()">Neue Einträge hinzufügen</button>
+      <button class="export-button" onclick="exportAll()">Alle gespeicherten Rückgaben exportieren</button>
+    </div>
   </div>
 
   <script>
@@ -167,9 +178,6 @@
           if (box.checked) markAsReturned(idx);
         };
       });
-
-      updateDebug();
-      updateRaw();
     }
 
     function markAsReturned(i) {
@@ -234,24 +242,6 @@
         !exported.some(ex => ex.Name === e.Name && ex.Datum === e.Datum && ex.SkiNummer === e.SkiNummer)
       );
       renderTable();
-    }
-
-    function updateDebug() {
-      const arr = safeParse(localStorage.getItem("skitestEintraege")) || [];
-      const last = localStorage.getItem("skitestLastUpdate") || "-";
-      const dbg = document.getElementById('debug');
-      if (dbg) dbg.textContent = `Origin: ${location.origin} | Einträge: ${arr.length} | LastUpdate: ${last}`;
-    }
-
-    function updateRaw() {
-      const raw = document.getElementById('raw');
-      if (!raw) return;
-      const o = {
-        skitestEintraege: safeParse(localStorage.getItem("skitestEintraege")) || [],
-        skitestExportiert: safeParse(localStorage.getItem("skitestExportiert")) || [],
-        skitestLastUpdate: localStorage.getItem("skitestLastUpdate") || null
-      };
-      raw.textContent = JSON.stringify(o, null, 2);
     }
 
     // Initial
