@@ -64,10 +64,28 @@
       <label for="ort_test">Skitest-Ort</label>
       <select id="ort_test" required>
         <option value="">Bitte wählen</option>
-        <option value="Arosa">Arosa</option>
-        <option value="Lenzerheide">Lenzerheide</option>
-        <option value="Madrisa">Madrisa</option>
-        <option value="Eigergletscher">Eigergletscher</option>
+        <option value="Adelboden – Engstligenalp">Adelboden – Engstligenalp</option>
+        <option value="Arosa – Weisshorn Mittelstation">Arosa – Weisshorn Mittelstation</option>
+        <option value="Davos, Parsenn – Höhenweg">Davos, Parsenn – Höhenweg</option>
+        <option value="Davos, Parsenn – Parsennhütte">Davos, Parsenn – Parsennhütte</option>
+        <option value="Gstaad – Saanersloch Mittelstation">Gstaad – Saanersloch Mittelstation</option>
+        <option value="Hochgurgl – Hotel Riml">Hochgurgl – Hotel Riml</option>
+        <option value="Hochwang – Triemel / Fatschel">Hochwang – Triemel / Fatschel</option>
+        <option value="Klosters – Gotschna Gipfel">Klosters – Gotschna Gipfel</option>
+        <option value="Klosters, Madrisa – Mittelstation">Klosters, Madrisa – Mittelstation</option>
+        <option value="Laax – Plaun / Crap Sogn Gion">Laax – Plaun / Crap Sogn Gion</option>
+        <option value="Lenzerheide – Chili Hütta">Lenzerheide – Chili Hütta</option>
+        <option value="Obersaxen – Restaurant Kartitscha">Obersaxen – Restaurant Kartitscha</option>
+        <option value="Oberengadin, Diavolezza – Bergstation">Oberengadin, Diavolezza – Bergstation</option>
+        <option value="Parpan – Talstation">Parpan – Talstation</option>
+        <option value="Pizol – Pardiel">Pizol – Pardiel</option>
+        <option value="Saas-Fee – Mittelstation Morenia">Saas-Fee – Mittelstation Morenia</option>
+        <option value="St. Moritz, Corvatsch – Murtèl">St. Moritz, Corvatsch – Murtèl</option>
+        <option value="St. Moritz, Corviglia – Bergstation / SOS">St. Moritz, Corviglia – Bergstation / SOS</option>
+        <option value="St. Moritz, Corviglia – Marguns">St. Moritz, Corviglia – Marguns</option>
+        <option value="St. Moritz, Corviglia – Salastrains">St. Moritz, Corviglia – Salastrains</option>
+        <option value="SWS Jungfrau Region / Eigergletscher – Terasse">SWS Jungfrau Region / Eigergletscher – Terasse</option>
+        <option value="Titlis / Engelberg – Stand">Titlis / Engelberg – Stand</option>
       </select>
 
       <label for="modell">Skimodell inkl. Länge</label>
@@ -121,7 +139,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
   <script>
-    // ===== Signatur-Canvas =====
     const canvas = document.getElementById('signature-pad');
     const ctx = canvas.getContext('2d');
 
@@ -161,7 +178,6 @@
       return canvas.toDataURL() === blank.toDataURL();
     }
 
-    // ===== PDF-Erzeugung =====
     async function generateAndDownloadPDF(data) {
       const { jsPDF } = window.jspdf;
       const pdf = new jsPDF({ unit: 'mm', format: 'a4' });
@@ -206,7 +222,6 @@
       pdf.save(`Skitest_${safeName}_${data.Datum || new Date().toISOString().slice(0,10)}.pdf`);
     }
 
-    // ===== Formular-Submit (FIXED) =====
     function submitFormular() {
       const required = ['name','plz_ort','email','telefon','datum','ort_test','modell','ski_nr'];
       for (const id of required) {
@@ -215,42 +230,27 @@
       }
       if (isSignatureEmpty()) { alert('Bitte unterschreibe zur Bestätigung des Haftungsausschlusses.'); return; }
 
-      // Werte IMMER explizit per getElementById lesen (keine impliziten Globals)
-      const nameEl        = document.getElementById('name');
-      const plzOrtEl      = document.getElementById('plz_ort');
-      const emailEl       = document.getElementById('email');
-      const telefonEl     = document.getElementById('telefon');
-      const datumEl       = document.getElementById('datum');
-      const ortTestEl     = document.getElementById('ort_test');
-      const modellEl      = document.getElementById('modell');
-      const skiNrEl       = document.getElementById('ski_nr');
-      const bemerkungenEl = document.getElementById('bemerkungen');
-
       const data = {
-        Modell:         modellEl.value,
-        Datum:          datumEl.value,
-        Ort:            ortTestEl.value,
-        SkitestOrt:     ortTestEl.value,
-        Name:           nameEl.value,
-        Adresse_PLZOrt: plzOrtEl.value,
-        Email:          emailEl.value,
-        Telefon:        telefonEl.value,
-        SkiNummer:      skiNrEl.value,
-        Bemerkungen:    bemerkungenEl.value,
-        Unterschrift:   'vorhanden',
-        Status:         'Ski unterwegs'
+        Modell: document.getElementById('modell').value,
+        Datum: document.getElementById('datum').value,
+        Ort: document.getElementById('ort_test').value,
+        Name: document.getElementById('name').value,
+        Adresse_PLZOrt: document.getElementById('plz_ort').value,
+        Email: document.getElementById('email').value,
+        Telefon: document.getElementById('telefon').value,
+        SkiNummer: document.getElementById('ski_nr').value,
+        Bemerkungen: document.getElementById('bemerkungen').value,
+        Unterschrift: 'vorhanden',
+        Status: 'Ski unterwegs'
       };
 
-      // Speichern für Übersicht
       const gespeichert = JSON.parse(localStorage.getItem("skitestEintraege") || "[]");
       gespeichert.push(data);
       localStorage.setItem("skitestEintraege", JSON.stringify(gespeichert));
 
-      // Übersicht informieren (Events + Fallback)
       localStorage.setItem("skitestLastUpdate", String(Date.now()));
       try { new BroadcastChannel('skitest').postMessage('updated'); } catch {}
 
-      // PDF erstellen
       generateAndDownloadPDF({ ...data, UnterschriftImg: canvas.toDataURL() });
 
       alert("Anmeldung gespeichert & PDF erstellt. Vielen Dank!");
