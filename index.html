@@ -8,7 +8,7 @@
     body { font-family: sans-serif; margin: 20px; background: #f0f0f0; }
     .form-container {
       background: white; padding: 20px; border-radius: 10px;
-      max-width: 600px; margin: auto; box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      max-width: 700px; margin: auto; box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
     h2 { margin-top: 0; }
     label { display: block; margin-top: 15px; }
@@ -16,6 +16,7 @@
       width: 100%; padding: 8px; border-radius: 5px; border: 1px solid #ccc;
     }
     textarea { resize: vertical; min-height: 80px; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     .disclaimer-box {
       font-size: 12px; color: #555; line-height: 1.5;
       background: #f9f9f9; border: 1px solid #ddd; padding: 10px;
@@ -39,11 +40,17 @@
       background-color: #007bff; color: white; border: none;
       border-radius: 5px; font-size: 16px; cursor: pointer;
     }
+    .hint { font-size: 12px; color:#666; margin-top: 6px; }
   </style>
 </head>
 <body>
   <div class="form-container">
     <h2>Skitest Anmeldung</h2>
+
+    <!-- Schnellnachtrag: Bestehenden Kunden wählen -->
+    <label for="existing_customer">Bestehenden Kunden auswählen (optional)</label>
+    <input list="customerList" id="existing_customer" placeholder="Name auswählen, um Felder zu füllen…" />
+    <datalist id="customerList"></datalist>
 
     <form id="skitest-form" onsubmit="event.preventDefault(); submitFormular();">
       <label for="name">Vorname / Name</label>
@@ -52,65 +59,56 @@
       <label for="plz_ort">Adresse / PLZ, Ort</label>
       <input type="text" id="plz_ort" required />
 
-      <label for="email">E-Mail</label>
-      <input type="email" id="email" required />
+      <div class="row">
+        <div>
+          <label for="email">E-Mail</label>
+          <input type="email" id="email" required />
+        </div>
+        <div>
+          <label for="telefon">Telefon</label>
+          <input type="text" id="telefon" required />
+        </div>
+      </div>
 
-      <label for="telefon">Telefon</label>
-      <input type="text" id="telefon" required />
+      <div class="row">
+        <div>
+          <label for="datum">Datum</label>
+          <input type="date" id="datum" required />
+        </div>
+        <div>
+          <label for="ort_test">Skitest-Ort</label>
+          <select id="ort_test" required>
+            <option value="">Bitte wählen</option>
+            <option value="Adelboden – Engstligenalp">Adelboden – Engstligenalp</option>
+            <option value="Arosa – Weisshorn Mittelstation">Arosa – Weisshorn Mittelstation</option>
+            <option value="Davos, Parsenn – Höhenweg">Davos, Parsenn – Höhenweg</option>
+            <option value="Davos, Parsenn – Parsennhütte">Davos, Parsenn – Parsennhütte</option>
+            <option value="Gstaad – Saanersloch Mittelstation">Gstaad – Saanersloch Mittelstation</option>
+            <option value="Hochgurgl – Hotel Riml">Hochgurgl – Hotel Riml</option>
+            <option value="Hochwang – Triemel / Fatschel">Hochwang – Triemel / Fatschel</option>
+            <option value="Klosters – Gotschna Gipfel">Klosters – Gotschna Gipfel</option>
+            <option value="Klosters, Madrisa – Mittelstation">Klosters, Madrisa – Mittelstation</option>
+            <option value="Laax – Plaun / Crap Sogn Gion">Laax – Plaun / Crap Sogn Gion</option>
+            <option value="Lenzerheide – Chili Hütta">Lenzerheide – Chili Hütta</option>
+            <option value="Obersaxen – Restaurant Kartitscha">Obersaxen – Restaurant Kartitscha</option>
+            <option value="Oberengadin, Diavolezza – Bergstation">Oberengadin, Diavolezza – Bergstation</option>
+            <option value="Parpan – Talstation">Parpan – Talstation</option>
+            <option value="Pizol – Pardiel">Pizol – Pardiel</option>
+            <option value="Saas-Fee – Mittelstation Morenia">Saas-Fee – Mittelstation Morenia</option>
+            <option value="St. Moritz, Corvatsch – Murtèl">St. Moritz, Corvatsch – Murtèl</option>
+            <option value="St. Moritz, Corviglia – Bergstation / SOS">St. Moritz, Corviglia – Bergstation / SOS</option>
+            <option value="St. Moritz, Corviglia – Marguns">St. Moritz, Corviglia – Marguns</option>
+            <option value="St. Moritz, Corviglia – Salastrains">St. Moritz, Corviglia – Salastrains</option>
+            <option value="SWS Jungfrau Region / Eigergletscher – Terasse">SWS Jungfrau Region / Eigergletscher – Terasse</option>
+            <option value="Titlis / Engelberg – Stand">Titlis / Engelberg – Stand</option>
+          </select>
+        </div>
+      </div>
 
-      <label for="datum">Datum</label>
-      <input type="date" id="datum" required />
-
-      <label for="ort_test">Skitest-Ort</label>
-      <select id="ort_test" required>
-        <option value="">Bitte wählen</option>
-        <option value="Adelboden – Engstligenalp">Adelboden – Engstligenalp</option>
-        <option value="Arosa – Weisshorn Mittelstation">Arosa – Weisshorn Mittelstation</option>
-        <option value="Davos, Parsenn – Höhenweg">Davos, Parsenn – Höhenweg</option>
-        <option value="Davos, Parsenn – Parsennhütte">Davos, Parsenn – Parsennhütte</option>
-        <option value="Gstaad – Saanersloch Mittelstation">Gstaad – Saanersloch Mittelstation</option>
-        <option value="Hochgurgl – Hotel Riml">Hochgurgl – Hotel Riml</option>
-        <option value="Hochwang – Triemel / Fatschel">Hochwang – Triemel / Fatschel</option>
-        <option value="Klosters – Gotschna Gipfel">Klosters – Gotschna Gipfel</option>
-        <option value="Klosters, Madrisa – Mittelstation">Klosters, Madrisa – Mittelstation</option>
-        <option value="Laax – Plaun / Crap Sogn Gion">Laax – Plaun / Crap Sogn Gion</option>
-        <option value="Lenzerheide – Chili Hütta">Lenzerheide – Chili Hütta</option>
-        <option value="Obersaxen – Restaurant Kartitscha">Obersaxen – Restaurant Kartitscha</option>
-        <option value="Oberengadin, Diavolezza – Bergstation">Oberengadin, Diavolezza – Bergstation</option>
-        <option value="Parpan – Talstation">Parpan – Talstation</option>
-        <option value="Pizol – Pardiel">Pizol – Pardiel</option>
-        <option value="Saas-Fee – Mittelstation Morenia">Saas-Fee – Mittelstation Morenia</option>
-        <option value="St. Moritz, Corvatsch – Murtèl">St. Moritz, Corvatsch – Murtèl</option>
-        <option value="St. Moritz, Corviglia – Bergstation / SOS">St. Moritz, Corviglia – Bergstation / SOS</option>
-        <option value="St. Moritz, Corviglia – Marguns">St. Moritz, Corviglia – Marguns</option>
-        <option value="St. Moritz, Corviglia – Salastrains">St. Moritz, Corviglia – Salastrains</option>
-        <option value="SWS Jungfrau Region / Eigergletscher – Terasse">SWS Jungfrau Region / Eigergletscher – Terasse</option>
-        <option value="Titlis / Engelberg – Stand">Titlis / Engelberg – Stand</option>
-      </select>
-
-      <label for="modell">Skimodell inkl. Länge</label>
-      <select id="modell" required>
-        <option value="">Bitte wählen</option>
-        <option value="ARX 150">ARX 150</option>
-        <option value="ARX 156">ARX 156</option>
-        <option value="ARX 164">ARX 164</option>
-        <option value="ARX 172">ARX 172</option>
-        <option value="ARX 150 PRO">ARX 150 PRO</option>
-        <option value="ARX 156 PRO">ARX 156 PRO</option>
-        <option value="ARX 164 PRO">ARX 164 PRO</option>
-        <option value="ARX 172 PRO">ARX 172 PRO</option>
-        <option value="ASR 132">ASR 132</option>
-        <option value="ASR 144">ASR 144</option>
-        <option value="ASR 156">ASR 156</option>
-        <option value="ASR 165">ASR 165</option>
-        <option value="ADP 155/160">ADP 155/160</option>
-        <option value="ADP 163/168">ADP 163/168</option>
-        <option value="AFR 167">AFR 167</option>
-        <option value="AFR 176">AFR 176</option>
-      </select>
-
-      <label for="ski_nr">Ski-Nr.</label>
-      <input type="text" id="ski_nr" required />
+      <!-- NEU: mehrere Ski-Nummern auf einmal -->
+      <label for="ski_nums">Ski-Nummern (kommasepariert) – z. B. 101, 102, 117</label>
+      <input type="text" id="ski_nums" placeholder="z. B. 101, 102, 117" required />
+      <div class="hint">Für Familien oder mehrere Personen die Ski-Nummern durch Komma trennen.</div>
 
       <label for="bemerkungen">Bemerkungen (optional)</label>
       <textarea id="bemerkungen" placeholder="z.B. spezielle Wünsche oder Hinweise..."></textarea>
@@ -139,6 +137,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
   <script>
+    // ========== Signatur-Canvas ==========
     const canvas = document.getElementById('signature-pad');
     const ctx = canvas.getContext('2d');
 
@@ -178,6 +177,39 @@
       return canvas.toDataURL() === blank.toDataURL();
     }
 
+    // ========== Kundenliste für Schnellnachtrag ==========
+    function loadCustomerList() {
+      const arr = JSON.parse(localStorage.getItem("skitestEintraege") || "[]");
+      const seen = new Set();
+      const list = document.getElementById('customerList');
+      list.innerHTML = '';
+      arr.slice().reverse().forEach(e => {
+        const key = (e.Name || '').trim();
+        if (!key || seen.has(key)) return;
+        seen.add(key);
+        const opt = document.createElement('option');
+        opt.value = key;
+        opt.label = `${key} — ${e.Email || ''} ${e.Telefon ? ' / ' + e.Telefon : ''}`;
+        list.appendChild(opt);
+      });
+    }
+    loadCustomerList();
+
+    // Autofill bei Auswahl
+    document.getElementById('existing_customer').addEventListener('change', () => {
+      const nameSel = document.getElementById('existing_customer').value.trim();
+      if (!nameSel) return;
+      const arr = JSON.parse(localStorage.getItem("skitestEintraege") || "[]");
+      const last = arr.slice().reverse().find(e => (e.Name || '').trim() === nameSel);
+      if (!last) return;
+      document.getElementById('name').value = last.Name || '';
+      document.getElementById('plz_ort').value = last.Adresse_PLZOrt || last.PLZOrt || '';
+      document.getElementById('email').value = last.Email || '';
+      document.getElementById('telefon').value = last.Telefon || '';
+      // Ort/DATUM bewusst nicht überschreiben
+    });
+
+    // ========== PDF-Erzeugung ==========
     async function generateAndDownloadPDF(data) {
       const { jsPDF } = window.jspdf;
       const pdf = new jsPDF({ unit: 'mm', format: 'a4' });
@@ -196,8 +228,8 @@
       pdf.setFont(undefined,'normal');
       pdf.text(`Datum: ${data.Datum||''}`, 14, y); y+=6;
       pdf.text(`Ort: ${data.Ort||''}`, 14, y); y+=6;
-      pdf.text(`Modell: ${data.Modell||''}`, 14, y); y+=6;
-      pdf.text(`Ski-Nr.: ${data.SkiNummer||''}`, 14, y); y+=8;
+      const nums = (data.SkiNummern || []).join(', ');
+      pdf.text(`Ski-Nummern: ${nums}`, 14, y); y+=8;
 
       pdf.setFont(undefined,'bold'); pdf.text('Bemerkungen', 14, y); y+=6;
       pdf.setFont(undefined,'normal');
@@ -222,40 +254,52 @@
       pdf.save(`Skitest_${safeName}_${data.Datum || new Date().toISOString().slice(0,10)}.pdf`);
     }
 
+    // ========== Formular-Submit ==========
     function submitFormular() {
-      const required = ['name','plz_ort','email','telefon','datum','ort_test','modell','ski_nr'];
+      const required = ['name','plz_ort','email','telefon','datum','ort_test','ski_nums'];
       for (const id of required) {
         const el = document.getElementById(id);
         if (!el || !el.value) { alert('Bitte fülle alle Pflichtfelder korrekt aus.'); return; }
       }
       if (isSignatureEmpty()) { alert('Bitte unterschreibe zur Bestätigung des Haftungsausschlusses.'); return; }
 
-      const data = {
-        Modell: document.getElementById('modell').value,
+      // Ski-Nummern parsen → Array
+      const rawNums = document.getElementById('ski_nums').value;
+      const skiNums = rawNums.split(',').map(s => s.trim()).filter(Boolean);
+      if (skiNums.length === 0) { alert('Bitte mindestens eine Ski-Nummer eintragen.'); return; }
+
+      const dataCommon = {
         Datum: document.getElementById('datum').value,
         Ort: document.getElementById('ort_test').value,
         Name: document.getElementById('name').value,
         Adresse_PLZOrt: document.getElementById('plz_ort').value,
         Email: document.getElementById('email').value,
         Telefon: document.getElementById('telefon').value,
-        SkiNummer: document.getElementById('ski_nr').value,
         Bemerkungen: document.getElementById('bemerkungen').value,
         Unterschrift: 'vorhanden',
         Status: 'Ski unterwegs'
       };
 
+      // Einträge pro Ski-Nummer speichern (je eine Zeile in der Übersicht)
       const gespeichert = JSON.parse(localStorage.getItem("skitestEintraege") || "[]");
-      gespeichert.push(data);
+      skiNums.forEach(num => {
+        gespeichert.push({ ...dataCommon, SkitestOrt: dataCommon.Ort, SkiNummer: num });
+      });
       localStorage.setItem("skitestEintraege", JSON.stringify(gespeichert));
 
+      // Übersicht informieren
       localStorage.setItem("skitestLastUpdate", String(Date.now()));
       try { new BroadcastChannel('skitest').postMessage('updated'); } catch {}
 
-      generateAndDownloadPDF({ ...data, UnterschriftImg: canvas.toDataURL() });
+      // PDF einmal mit allen Nummern erzeugen
+      generateAndDownloadPDF({ ...dataCommon, SkiNummern: skiNums, UnterschriftImg: canvas.toDataURL() });
 
       alert("Anmeldung gespeichert & PDF erstellt. Vielen Dank!");
       document.getElementById('skitest-form').reset();
       clearSignature();
+
+      // Kundenliste aktualisieren (für Schnellnachtrag)
+      loadCustomerList();
     }
   </script>
 </body>
