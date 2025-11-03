@@ -189,24 +189,46 @@
         seen.add(key);
         const opt = document.createElement('option');
         opt.value = key;
-        opt.label = `${key} — ${e.Email || ''} ${e.Telefon ? ' / ' + e.Telefon : ''}`;
+        opt.label = `${key} — ${e.Email || ''}${e.Telefon ? ' / ' + e.Telefon : ''}`;
         list.appendChild(opt);
       });
     }
     loadCustomerList();
 
-    // Autofill bei Auswahl
+    // Autofill bei Auswahl: ALLE Felder vorfüllen (außer Ski-Nummern & Unterschrift)
     document.getElementById('existing_customer').addEventListener('change', () => {
-      const nameSel = document.getElementById('existing_customer').value.trim();
+      const input = document.getElementById('existing_customer');
+      const nameSel = (input.value || '').trim();
       if (!nameSel) return;
+
       const arr = JSON.parse(localStorage.getItem("skitestEintraege") || "[]");
-      const last = arr.slice().reverse().find(e => (e.Name || '').trim() === nameSel);
+      // Letzten passenden Eintrag nach Name nehmen (case-insensitive)
+      const last = arr.slice().reverse().find(e => (e.Name || '').trim().toLowerCase() === nameSel.toLowerCase());
       if (!last) return;
-      document.getElementById('name').value = last.Name || '';
+
+      // Grunddaten
+      document.getElementById('name').value    = last.Name || '';
       document.getElementById('plz_ort').value = last.Adresse_PLZOrt || last.PLZOrt || '';
-      document.getElementById('email').value = last.Email || '';
+      document.getElementById('email').value   = last.Email || '';
       document.getElementById('telefon').value = last.Telefon || '';
-      // Ort/DATUM bewusst nicht überschreiben
+      document.getElementById('bemerkungen').value = last.Bemerkungen || '';
+
+      // Datum & Ort Test ebenfalls übernehmen
+      if (last.Datum) document.getElementById('datum').value = last.Datum;
+      if (last.Ort || last.SkitestOrt) {
+        const sel = document.getElementById('ort_test');
+        const v = last.Ort || last.SkitestOrt;
+        if ([...sel.options].some(o => o.value === v)) sel.value = v;
+      }
+
+      // Ski-Nummern absichtlich LEER lassen – neue Nummer(n) eintragen
+      document.getElementById('ski_nums').value = '';
+
+      // Unterschrift-CANVAS leeren (muss neu unterschrieben werden)
+      if (typeof clearSignature === 'function') clearSignature();
+
+      // Fokus auf Ski-Nummern
+      document.getElementById('ski_nums').focus();
     });
 
     // ========== PDF-Erzeugung ==========
