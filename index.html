@@ -177,32 +177,49 @@
       return canvas.toDataURL() === blank.toDataURL();
     }
 
+    // ========== Gemeinsame Datenquelle: aktuelle + retour ==========
+    function getAllEntries() {
+      const a = JSON.parse(localStorage.getItem("skitestEintraege") || "[]");
+      const b = JSON.parse(localStorage.getItem("skitestExportiert") || "[]");
+      return a.concat(b);
+    }
+
     // ========== Kundenliste für Schnellnachtrag ==========
     function loadCustomerList() {
-      const arr = JSON.parse(localStorage.getItem("skitestEintraege") || "[]");
+      const arr = getAllEntries();
+
+      // pro Name die JÜNGSTE Variante (reverse)
       const seen = new Set();
-      const list = document.getElementById('customerList');
-      list.innerHTML = '';
+      const latestByName = [];
       arr.slice().reverse().forEach(e => {
         const key = (e.Name || '').trim();
         if (!key || seen.has(key)) return;
         seen.add(key);
+        latestByName.push(e);
+      });
+
+      const list = document.getElementById('customerList');
+      list.innerHTML = '';
+      latestByName.forEach(e => {
         const opt = document.createElement('option');
-        opt.value = key;
-        opt.label = `${key} — ${e.Email || ''}${e.Telefon ? ' / ' + e.Telefon : ''}`;
+        opt.value = (e.Name || '').trim();
+        const labelParts = [];
+        if (e.Email)   labelParts.push(e.Email);
+        if (e.Telefon) labelParts.push(e.Telefon);
+        opt.label = `${opt.value}${labelParts.length ? ' — ' + labelParts.join(' / ') : ''}`;
         list.appendChild(opt);
       });
     }
     loadCustomerList();
 
-    // Autofill bei Auswahl: ALLE Felder vorfüllen (außer Ski-Nummern & Unterschrift)
+    // Autofill bei Auswahl: ALLE Felder (außer Ski-Nummern & Unterschrift)
     document.getElementById('existing_customer').addEventListener('change', () => {
       const input = document.getElementById('existing_customer');
       const nameSel = (input.value || '').trim();
       if (!nameSel) return;
 
-      const arr = JSON.parse(localStorage.getItem("skitestEintraege") || "[]");
-      // Letzten passenden Eintrag nach Name nehmen (case-insensitive)
+      const arr = getAllEntries();
+      // jüngsten passenden Eintrag (case-insensitive)
       const last = arr.slice().reverse().find(e => (e.Name || '').trim().toLowerCase() === nameSel.toLowerCase());
       if (!last) return;
 
@@ -213,21 +230,21 @@
       document.getElementById('telefon').value = last.Telefon || '';
       document.getElementById('bemerkungen').value = last.Bemerkungen || '';
 
-      // Datum & Ort Test ebenfalls übernehmen
+      // Datum & Ort Test übernehmen
       if (last.Datum) document.getElementById('datum').value = last.Datum;
-      if (last.Ort || last.SkitestOrt) {
+      const ortSel = last.Ort || last.SkitestOrt;
+      if (ortSel) {
         const sel = document.getElementById('ort_test');
-        const v = last.Ort || last.SkitestOrt;
-        if ([...sel.options].some(o => o.value === v)) sel.value = v;
+        if ([...sel.options].some(o => o.value === ortSel)) sel.value = ortSel;
       }
 
-      // Ski-Nummern absichtlich LEER lassen – neue Nummer(n) eintragen
+      // Ski-Nummern leer lassen – neu eintragen
       document.getElementById('ski_nums').value = '';
 
-      // Unterschrift-CANVAS leeren (muss neu unterschrieben werden)
+      // Unterschrift zurücksetzen
       if (typeof clearSignature === 'function') clearSignature();
 
-      // Fokus auf Ski-Nummern
+      // Fokus auf die Nummern
       document.getElementById('ski_nums').focus();
     });
 
@@ -320,7 +337,7 @@
       document.getElementById('skitest-form').reset();
       clearSignature();
 
-      // Kundenliste aktualisieren (für Schnellnachtrag)
+      // Kundenliste aktualisieren (auch wenn der Kunde schon mal retour war)
       loadCustomerList();
     }
   </script>
