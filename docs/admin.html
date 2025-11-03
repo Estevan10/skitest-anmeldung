@@ -29,7 +29,6 @@
     }
     button.refresh-button { background-color: #28a745; }
 
-    /* Buttons unten nebeneinander */
     .actions {
       display: flex;
       gap: 12px;
@@ -59,7 +58,6 @@
     <table id="adminTable">
       <thead>
         <tr>
-          <th>Modell</th>
           <th>Datum</th>
           <th>Ort</th>
           <th>Ort Test</th>
@@ -77,7 +75,6 @@
 
     <div id="leerHinweis" style="margin-top:20px; text-align:center; color:gray;"></div>
 
-    <!-- Buttons unten -->
     <div class="actions">
       <button class="refresh-button" onclick="refreshNewEntries()">Neue Einträge hinzufügen</button>
       <button class="export-button" onclick="exportAll()">Alle gespeicherten Rückgaben exportieren</button>
@@ -85,10 +82,8 @@
   </div>
 
   <script>
-    // ===== Utilities =====
     function safeParse(s){ try{ return s ? JSON.parse(s) : null; } catch { return null; } }
 
-    // ===== State =====
     let eintraege = safeParse(localStorage.getItem("skitestEintraege")) || [];
     let exportierteEintraege = safeParse(localStorage.getItem("skitestExportiert")) || [];
     let lastSeenUpdate = localStorage.getItem("skitestLastUpdate") || "";
@@ -96,19 +91,16 @@
     const filterBox = document.getElementById('filterUnterwegs');
     filterBox.addEventListener('change', renderTable);
 
-    // Live-Update über localStorage-Events
     window.addEventListener('storage', (e) => {
       if (e.key === 'skitestEintraege' || e.key === 'skitestLastUpdate') {
         refreshNewEntries();
       }
     });
-    // Instant-Update über BroadcastChannel
     try {
       const bc = new BroadcastChannel('skitest');
       bc.onmessage = (ev) => { if (ev?.data === 'updated') refreshNewEntries(); };
     } catch {}
 
-    // Fallback: Polling alle 2s
     setInterval(() => {
       const now = localStorage.getItem("skitestLastUpdate") || "";
       if (now && now !== lastSeenUpdate) {
@@ -118,12 +110,12 @@
     }, 2000);
 
     function combineAddress(e) {
-      if (e.Adresse_PLZOrt) return e.Adresse_PLZOrt; // neue Struktur
-      if (e.Adresse || e.PLZ || e.Ort2) {            // alte Struktur
+      if (e.Adresse_PLZOrt) return e.Adresse_PLZOrt;
+      if (e.Adresse || e.PLZ || e.Ort2) {
         const rechts = [e.PLZ, e.Ort2].filter(Boolean).join(", ");
         return [e.Adresse, rechts || null].filter(Boolean).join(" / ");
       }
-      if (e.PLZOrt) return e.PLZOrt;                 // ganz alt
+      if (e.PLZOrt) return e.PLZOrt;
       return "";
     }
 
@@ -142,7 +134,6 @@
         const statusClass = isAvail ? 'available' : 'unavailable';
 
         tr.innerHTML = `
-          <td>${e.Modell || ''}</td>
           <td>${e.Datum || ''}</td>
           <td>${e.Ort || ''}</td>
           <td>${e.SkitestOrt || ''}</td>
@@ -159,7 +150,6 @@
 
       leerHinweis.textContent = view.length === 0 ? "Keine Einträge für diese Ansicht." : "";
 
-      // Status toggeln (nicht entfernen)
       document.querySelectorAll('.status-cell').forEach(cell => {
         const i = +cell.dataset.idx;
         cell.onclick = () => {
@@ -171,7 +161,6 @@
         };
       });
 
-      // Retour → exportieren & entfernen
       document.querySelectorAll('input[type="checkbox"][data-retour-idx]').forEach(box => {
         box.onchange = () => {
           const idx = Number(box.getAttribute('data-retour-idx'));
@@ -207,12 +196,11 @@
       }
 
       const header = [
-        "Modell","Datum","Ort","Ort Test","Name","Adresse / PLZ, Ort",
+        "Datum","Ort","Ort Test","Name","Adresse / PLZ, Ort",
         "E-Mail","Telefon","Ski-Nr.","Status","Rückgabedatum"
       ];
 
       const rows = exportierteEintraege.map(e => [
-        e.Modell || '',
         e.Datum || '',
         e.Ort || '',
         e.SkitestOrt || '',
@@ -244,7 +232,6 @@
       renderTable();
     }
 
-    // Initial
     refreshNewEntries();
   </script>
 </body>
